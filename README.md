@@ -69,7 +69,7 @@ Currently, .devkit provides only one module: [cram](cram).  It defines a default
 import: cram
 ```
 
-You can do the same in your own `.dkrc`, and the same goes for any future .devkit modules.  You can then override a module's defaults by defining new functions.  For example, if you wanted to change the files to be processed by cram, you can redefine the `cramfiles` function, and to change the pager, redefine the `crampager` function.
+You can do the same in your own `.dkrc`, and the same goes for any future .devkit modules.  You can then override a module's defaults by defining new functions.  For example, if you wanted to change the files to be processed by cram, you can redefine the `cram.files` function, and to change the pager, redefine the `cram.pager` function.
 
 ### Project Status
 

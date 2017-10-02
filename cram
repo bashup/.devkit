@@ -2,9 +2,9 @@
 
 export CRAM="--indent=4 --shell=bash --verbose"
 
-cramfiles() { ls specs/*.cram.md; }
-crampager() { less -FR; }
-testfiles() { cramfiles; }
+cram.files() { ls specs/*.cram.md; }
+cram.pager() { less -FR; }
+test.files() { cram.files; }
 
 dk.test() { dk cram; }
 dk.cram() {
@@ -12,14 +12,14 @@ dk.cram() {
     have-any cram ||
         abort "Please install cram (https://bitheap.org/cram/) to run tests" 69
     if (($#)); then
-         xargs -a <(cramfiles) cram "$@"
-    else xargs -a <(cramfiles) cram  | {
+         xargs -a <(cram.files) cram "$@"
+    else xargs -a <(cram.files) cram  | {
         if have-any pygmentize; then
             pygmentize -l diff | slurpy
         else
             slurpy
         fi
-    } | crampager
+    } | cram.pager
     fi
 }
 
