@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+
+realpath.symlink() {
+    # Try to create a relative symlink if ln -r or Python are available; otherwise absolute
+    if ln -sr "$@" >/dev/null 2>&1; then
+        return
+    elif command -v python >/dev/null; then
+        python -c 'import sys, os.path; os.symlink(os.path.relpath(*sys.argv[1:]), sys.argv[2])' "$@"
+    else
+        # fallback to absolute paths
+        local src dst
+        realpath.of "$1" src && realpath.of "$2" dst && ln -s "$src" "$dst"
+    fi
+}
+
+realpath.reply() {
+    case "${2:-REPLY}" in
+    -) echo -n "$1" ;;
+    *) printf -v "${2:-REPLY}" "%s" "$1" ;;
+    esac
+}
+
+realpath.dir() { realpath.of "$1" && realpath.dirname "$REPLY" "${@:2}"; }
+
+realpath.dirname() {
+    case $1 in
+    /*/*|?*/*) realpath.reply "${1%/*}" "${@:2}" ;;
+    /*)        realpath.reply "/" "${@:2}" ;;
+    *)         realpath.reply "." ;;
+    esac
+}
+
+realpath.of() {
+    if [[ -v __realpath_cmd ]]; then
+        REPLY=$($__realpath_cmd "$1") && realpath.reply "$REPLY" "${@:2}"
+        return $?
+    else
+        # On first use w/symlink, figure out what tool we can use
+        if command -v realpath >/dev/null; then
+            readonly __realpath_cmd="realpath"
+        elif command -v readlink >/dev/null && readlink --version >/dev/null 2>&1; then
+            readonly __realpath_cmd="readlink -nf"
+        elif command -v greadlink >/dev/null && greadlink --version >/dev/null 2>&1; then
+            readonly __realpath_cmd="greadlink -nf"
+        elif command -v python >/dev/null; then
+            readonly __realpath_cmd="python -c 'import sys,os; sys.stdout.write(os.realpath(sys.argv[1])))'"
+        else
+            echo "$1 is a symlink, but no symlink resolution tools are available" 2>&1
+            exit 69  # EX_UNAVAILABLE
+        fi
+        realpath.of "$@"
+        return
+    fi
+}
+

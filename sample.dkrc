@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# ---
+# Add your own commands, functions, and variables here.  Define defaults first,
+# then `import:` the desired devkit modules, and then define any overrides to
+# the devkit defaults.
+# ---

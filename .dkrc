@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+# Use cram for testing
+import: cram

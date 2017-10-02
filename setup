@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+
+do-setup() {
+    if [[ -d .git ]]; then
+        # check for dirty
+        if git status --porcelain | grep -qe '^[^?!]'; then
+            echo "Please commit or stash your changes before running setup"
+            exit 65   # EX_DATAERR
+        fi
+    else
+        echo "(Not using git?  Be sure to exclude .devkit and .deps from revision control)"
+    fi
+
+    # Create dotfiles
+    for dot in .envrc .dkrc; do
+        create-or-inform $dot ${BASH_SOURCE%/*}/sample$dot
+    done
+
+    # Create script/bootstrap, et al
+    mkdir -p script
+    create-or-inform script/bootstrap ${BASH_SOURCE%/*}/script/bootstrap
+    chmod +x script/bootstrap
+
+    for cmd in cibuild console server setup test update; do
+        if [[ -f script/$cmd && ! -L script/$cmd ]]; then
+            echo "script/$cmd is not a symlink; please remove it"
+        elif [[ ! -L script/$cmd ]]; then
+            ln -s bootstrap script/$cmd
+        fi
+    done
+
+    # Update .gitignore and add to revision control
+    if [[ -d .git ]]; then
+        for ignore in .deps .devkit; do
+            if [[ ! -f .gitignore ]] || ! grep -q ^\\$ignore'\(\s\|$\)' .gitignore; then
+                echo $ignore >>.gitignore
+            fi
+        done
+        git add .gitignore .envrc .dkrc script/
+    fi
+    echo "devkit setup is complete; you can now commit the changes"
+}
+
+create-or-inform() {
+    if ! [[ -f $1 ]]; then
+        cat "$2"  >"$1"
+        [[ $1 == .envrc && "$(command -v direnv)" ]] && direnv allow
+    elif ! diff -q "$1" "$2" >/dev/null; then
+        echo "$1 already exists with different contents; please check against $2"
+    fi
+}
+
+[[ $0 == $BASH_SOURCE ]] && do-setup "$@"
+

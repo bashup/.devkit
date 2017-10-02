@@ -1,0 +1,289 @@
+#!/usr/bin/env bash
+readonly __bpkr_packed=yes
+{ if [[ $OSTYPE != cygwin && -e /dev/fd/0 ]]; then source /dev/fd/0; else source <(cat); fi; } <<'# --- END e80aa3355cc3e3165ea4b9b0cc19ab774b36ed60db27ac65e47013052fec4ec4 ---'
+if [[ ${BASHPACKR_LOADED-} != *\<bashpackr\>* ]]; then BASHPACKR_LOADED+=\<bashpackr\>
+import:()      { is-imported: "$1" || bpkr.__fatal "module '$1' wasn't packed"; }
+main:()        { if [[ $0 == ${BASH_SOURCE[1]} ]]; then "$@"; exit $?; fi; }
+pack-with:()   { :; }  # No-op at runtime of packed scripts
+can-import:()  { is-imported: "$1"; }  # can't import what isn't packed
+is-imported:() { [[ ${BASHPACKR_LOADED-} == *"<$1>"* ]]; }
+bpkr.__fatal() { echo "bashpackr: fatal error: " "$1" >&2; exit ${2-70}; }
+fi
+if [[ ${BASHPACKR_LOADED-} != *\<realpaths\>* ]]; then BASHPACKR_LOADED+=\<realpaths\>
+#!/usr/bin/env bash
+
+realpath.symlink() {
+    # Try to create a relative symlink if ln -r or Python are available; otherwise absolute
+    if ln -sr "$@" >/dev/null 2>&1; then
+        return
+    elif command -v python >/dev/null; then
+        python -c 'import sys, os.path; os.symlink(os.path.relpath(*sys.argv[1:]), sys.argv[2])' "$@"
+    else
+        # fallback to absolute paths
+        local src dst
+        realpath.of "$1" src && realpath.of "$2" dst && ln -s "$src" "$dst"
+    fi
+}
+
+realpath.reply() {
+    case "${2:-REPLY}" in
+    -) echo -n "$1" ;;
+    *) printf -v "${2:-REPLY}" "%s" "$1" ;;
+    esac
+}
+
+realpath.dir() { realpath.of "$1" && realpath.dirname "$REPLY" "${@:2}"; }
+
+realpath.dirname() {
+    case $1 in
+    /*/*|?*/*) realpath.reply "${1%/*}" "${@:2}" ;;
+    /*)        realpath.reply "/" "${@:2}" ;;
+    *)         realpath.reply "." ;;
+    esac
+}
+
+realpath.of() {
+    if [[ -v __realpath_cmd ]]; then
+        REPLY=$($__realpath_cmd "$1") && realpath.reply "$REPLY" "${@:2}"
+        return $?
+    else
+        # On first use w/symlink, figure out what tool we can use
+        if command -v realpath >/dev/null; then
+            readonly __realpath_cmd="realpath"
+        elif command -v readlink >/dev/null && readlink --version >/dev/null 2>&1; then
+            readonly __realpath_cmd="readlink -nf"
+        elif command -v greadlink >/dev/null && greadlink --version >/dev/null 2>&1; then
+            readonly __realpath_cmd="greadlink -nf"
+        elif command -v python >/dev/null; then
+            readonly __realpath_cmd="python -c 'import sys,os; sys.stdout.write(os.realpath(sys.argv[1])))'"
+        else
+            echo "$1 is a symlink, but no symlink resolution tools are available" 2>&1
+            exit 69  # EX_UNAVAILABLE
+        fi
+        realpath.of "$@"
+        return
+    fi
+}
+
+fi
+if [[ ${BASHPACKR_LOADED-} != *\<loco\>* ]]; then BASHPACKR_LOADED+=\<loco\>
+#!/usr/bin/env bash
+
+# LICENSE
+# -------
+#
+# `loco` is copyright 2015-2017 PJ Eby,
+# and MIT-licensed as follows:
+#
+# Permission is hereby granted, free of
+# charge, to any person obtaining a copy
+# of this software and associated
+# documentation files (the "Software"),
+# to deal in the Software without
+# restriction, including without
+# limitation the rights to use, copy,
+# modify, merge, publish, distribute,
+# sublicense, and/or sell copies of the
+# Software, and to permit persons to
+# whom the Software is furnished to do
+# so, subject to the following
+# conditions:
+#
+# The above copyright notice and this
+# permission notice shall be included in
+# all copies or substantial portions of
+# the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS",
+# WITHOUT WARRANTY OF ANY KIND, EXPRESS
+# OR IMPLIED, INCLUDING BUT NOT LIMITED
+# TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT OWNERS BE LIABLE
+# FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF
+# CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE
+# SOFTWARE OR THE USE OR OTHER DEALINGS
+# IN THE SOFTWARE.
+
+# For documentation, see https://github.com/bashup/loco
+set -euo pipefail
+
+fn_exists() { [[ "$(type -t "$1")" == "function" ]] ; }
+fn_copy()   { body="$(declare -f $1)"; eval "$2 ${body#$1}"; }
+findup() { walkup "${1:-$PWD}" print_if_exists "${@:2}"; }
+
+print_if_exists() {
+    d="${@: -1}"; cd "$d"
+    for f in ${@:1:${#}-1}; do [[ -f "$f" ]] && echo "${d%/}/$f" && return 0; done
+    return 1
+}
+
+walkup() {
+    local d="$(realpath "$1")"
+    until "${@:2}" "$d"; do
+        [[ "$d" != "/" ]] || return 1
+        d="$(dirname "$d")"
+    done
+}
+
+_loco_usage() { loco_error "Usage: $LOCO_COMMAND command args..."; }
+_loco_error() { echo "$@" >&2; kill -SIGUSR1 $$; exit 1; }
+_loco_cmd() { echo "$LOCO_NAME.$1"; }
+_loco_exec() { loco_error "Unrecognized command: $1"; }
+_loco_exists() { [ -n "$(type -t "$1")" ] ; }
+
+_loco_do() {
+    [ -z "${1-}" ] && loco_usage   # No command given, exit w/usage
+    local cmd="$(loco_cmd "$1")"
+    [ -z "$cmd" ] && loco_usage   # Unrecognized command, exit w/usage
+
+    if loco_exists "$cmd"; then
+        # Command, alias, function, or builtin exists
+        shift; "$cmd" "$@"
+    else
+        # Invoke the default command interpreter
+        loco_exec "$@"
+    fi
+}
+
+_loco_findproject() {
+    local proj="${LOCO_PROJECT-$(findup "$LOCO_PWD" "$LOCO_FILE")}" \
+    && [[ -n "$proj" ]] && echo $proj \
+    || loco_error "Can't find $LOCO_FILE here";
+}
+_loco_preconfig() { true; }
+_loco_postconfig() { true; }
+_loco_findroot() { dirname "$LOCO_PROJECT"; }
+_loco_loadproject() { cd "$LOCO_ROOT";  $LOCO_LOAD "$1"; }
+_loco_site_config() { source "$1"; }
+_loco_user_config() { source "$1"; }
+
+trap "exit 1" SIGUSR1
+
+# Find our configuration, exposing relevant paths and defaults
+_loco_config() {
+    loco_preconfig "$@"
+    LOCO_COMMAND="${LOCO_COMMAND-$(basename "$LOCO_SCRIPT")}"
+    LOCO_NAME="${LOCO_NAME-${LOCO_COMMAND}}"
+    LOCO_PWD="${LOCO_PWD-$PWD}"
+
+    LOCO_SITE_CONFIG="${LOCO_SITE_CONFIG-/etc/$LOCO_NAME/config}"
+    [ -f "$LOCO_SITE_CONFIG" ] && loco_site_config "$LOCO_SITE_CONFIG"
+    LOCO_RC="${LOCO_RC-.${LOCO_NAME}rc}"
+    LOCO_USER_CONFIG="${LOCO_USER_CONFIG-$HOME/$LOCO_RC}"
+    [ -f "$LOCO_USER_CONFIG" ] && loco_user_config "$LOCO_USER_CONFIG"
+
+    LOCO_FILE="${LOCO_FILE-.$LOCO_NAME}"
+    LOCO_LOAD="${LOCO_LOAD-source}"
+    loco_postconfig "$@"
+}
+
+_loco_main() {
+    loco_config "$@"
+    LOCO_PROJECT="${LOCO_PROJECT-$(loco_findproject "$@")}"
+    LOCO_ROOT="${LOCO_ROOT-$(loco_findroot "$@")}"
+    loco_loadproject "$LOCO_PROJECT"
+    fn_exists $LOCO_NAME || eval "$LOCO_NAME() { loco_do \"\$@\"; }"
+    loco_do "$@"
+}
+
+# Initialize default function implementations
+for f in $(declare -F|cut -d' ' -f3|grep ^_loco_); do
+    fn_exists "${f#_}" || fn_copy "$f" "${f#_}"
+done
+
+# Clear all LOCO_*  variables before beginning
+for lv in ${!LOCO_@}; do unset $lv; done
+
+if [[ "$0" != "${BASH_SOURCE[0]}" ]]; then
+    # Sourced as a script; let the other script run main
+    LOCO_SCRIPT="${LOCO_SCRIPT-${BASH_SOURCE[1]}}"
+else
+    LOCO_SCRIPT="${LOCO_SCRIPT-${BASH_SOURCE[0]}}"
+    loco_main "$@"
+    exit $?
+fi
+
+fi
+# --- END e80aa3355cc3e3165ea4b9b0cc19ab774b36ed60db27ac65e47013052fec4ec4 ---
+dk.bootstrap() { :; }
+dk.setup()     { dk bootstrap; }
+dk.update()    { dk bootstrap; }
+dk.cibuild()   { dk test; }
+
+dk.server()  { undefined-command server; }
+dk.test()    { undefined-command test; }
+dk.console() { undefined-command console; }
+
+undefined-command() {
+    abort "This project does not have a $1 command defined." 69   # EX_UNAVAILABLE
+}
+abort()    { log "$1"; exit $2; }
+log()      { echo "$1" >&2; }
+import: realpaths
+
+basher() {
+    have basher || {
+        mkdir -p "$BASHER_ROOT" "$BASHER_INSTALL_BIN"
+        git clone -q --depth 1 https://github.com/basherpm/basher "$BASHER_ROOT"
+        realpath.symlink "$BASHER_ROOT/bin/basher" "$BASHER_INSTALL_BIN/basher"
+    }
+    hash -d basher 2>/dev/null
+    unset -f basher
+    "$BASHER_INSTALL_BIN/basher" "$@"
+}
+have()     { [[ -x "$BASHER_INSTALL_BIN/$1" ]]; }
+have-any() { hash -d "$@"; command -v "$@"; } >/dev/null 2>&1
+
+require() {
+    have "$1" || __require "$1" "$1 must be installed to $BASHER_INSTALL_BIN/" "${@:2}"
+}
+
+require-any() {
+    have-any "$1" || __require "$1" "Please install $1 to perform this operation" "${@:2}"
+}
+
+__require() { if (($#>2)); then "${@:3}"; hash -d "$1" 2>/dev/null; else abort "$2" 69; fi }
+
+[[ ${__bpkr_packed-} ]] && import:() {
+    is-imported: "$1" && return
+    if [[ -f "$LOCO_ROOT/.devkit/$1" ]]; then
+        BASHPACKR_LOADED+="<$1>"
+        source "$LOCO_ROOT/.devkit/$1"
+    else
+        require bashpackr basher install bashup/bashpackr
+        source "$BASHER_INSTALL_BIN/bashpackr"
+        import: "$1"
+    fi
+}
+import: loco
+
+loco_preconfig() {
+    LOCO_SCRIPT=$BASH_SOURCE
+    LOCO_COMMAND=dk
+    LOCO_FILE=.dkrc
+}
+
+loco_loadproject() {
+    cd "$LOCO_ROOT"
+    [[ -f .envrc ]] && source .envrc
+
+    [[ ! -v BASHER_INSTALL_BIN || ${BASHER_INSTALL_BIN#$PWD} == "$BASHER_INSTALL_BIN" ]] &&
+        abort "Your .envrc must define a *local* installation of basher!" 78 # EX_CONFIG
+
+    have dk || {
+        mkdir -p "$BASHER_INSTALL_BIN"
+        realpath.symlink "$BASH_SOURCE" "$BASHER_INSTALL_BIN/dk"
+    }
+
+    $LOCO_LOAD "$1"
+}
+
+
+loco_site_config() { :; }
+loco_user_config() { :; }
+main: loco_main "$@"
+pack-with: sed -ne '/^```shell$/,/^```$/{/^```/d; p}' "$BASH_SOURCE"
