@@ -18,6 +18,7 @@ Without .git:
 
     $ ls -l script/
     total * (glob)
+    * README.md (glob)
     * bootstrap (glob)
     * cibuild -> bootstrap (glob)
     * clean -> bootstrap (glob)
@@ -43,6 +44,7 @@ With git (clean):
     A  .dkrc
     A  .envrc
     A  .gitignore
+    A  script/README.md
     A  script/bootstrap
     A  script/cibuild
     A  script/clean
@@ -63,10 +65,11 @@ With git (dirty):
 
     $ git commit -m "Added devkit"
     [master (root-commit) *] Added devkit (glob)
-     11 files changed, 61 insertions(+)
+     12 files changed, 67 insertions(+)
      create mode 100644 .dkrc
      create mode 100644 .envrc
      create mode 100644 .gitignore
+     create mode 100644 script/README.md
      create mode 100755 script/bootstrap
      create mode 120000 script/cibuild
      create mode 120000 script/clean
@@ -137,6 +140,21 @@ With changed script/bootstrap:
     $ echo >>script/bootstrap
     $ git commit -m "Tweaked bootstrap" script/bootstrap
     [master *] Tweaked bootstrap (glob)
+     1 file changed, 1 insertion(+)
+
+
+    $ .devkit/setup
+    .envrc already exists with different contents; please check against .devkit/sample.envrc
+    .dkrc already exists with different contents; please check against .devkit/sample.dkrc
+    script/bootstrap already exists with different contents; please check against .devkit/script/bootstrap
+    devkit setup is complete; you can now commit the changes
+    $ git status --porcelain
+
+With changed script/README.md (no warning, since README is optional):
+
+    $ echo >>script/README.md
+    $ git commit -m "Tweaked README.md" script/README.md
+    [master *] Tweaked README.md (glob)
      1 file changed, 1 insertion(+)
 
 

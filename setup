@@ -13,12 +13,13 @@ do-setup() {
 
     # Create dotfiles
     for dot in .envrc .dkrc; do
-        create-or-inform $dot ${BASH_SOURCE%/*}/sample$dot
+        create-or-inform $dot sample$dot
     done
 
     # Create script/bootstrap, et al
     mkdir -p script
-    create-or-inform script/bootstrap ${BASH_SOURCE%/*}/script/bootstrap
+    create-or-inform script/bootstrap script/bootstrap
+    create-or-inform script/README.md script/README.md no-inform
     chmod +x script/bootstrap
 
     for cmd in cibuild clean console server setup test update; do
@@ -43,10 +44,10 @@ do-setup() {
 
 create-or-inform() {
     if ! [[ -f $1 ]]; then
-        cat "$2"  >"$1"
+        cat "${BASH_SOURCE%/*}/$2"  >"$1"
         [[ $1 == .envrc && "$(command -v direnv)" ]] && direnv allow
-    elif ! diff -q "$1" "$2" >/dev/null; then
-        echo "$1 already exists with different contents; please check against $2"
+    elif [[ ! "${3-}" ]] && ! diff -q "$1" "${BASH_SOURCE%/*}/$2" >/dev/null; then
+        echo "$1 already exists with different contents; please check against ${BASH_SOURCE%/*}/$2"
     fi
 }
 
