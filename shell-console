@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+dk.console() {
+    shell-console
+}
+
+shell-console() {
+    bash --init-file <(
+        echo "[[ -f ~/.bashrc ]] && source ~/.bashrc"
+        echo 'PS1="(devkit) ${PS1-\$}"'
+        echo "dk.no-op() { :; }"
+        printf 'source %q; loco_main no-op; set +eu' "$0"
+    )
+}
+

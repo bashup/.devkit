@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+have-virtualenv() { have python && [[ -f "$BASHER_INSTALL_BIN/activate" ]]; }
+
+create-virtualenv() {
+    have-virtualenv && return
+    require-any python
+    require virtualenv.py github pypa/virtualenv master virtualenv.py
+    "$BASHER_INSTALL_BIN/virtualenv.py" "$@" "$BASHER_PREFIX"
+    have-virtualenv && VIRTUAL_ENV_DISABLE_PROMPT=true source "$BASHER_INSTALL_BIN/activate"
+}

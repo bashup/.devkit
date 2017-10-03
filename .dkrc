@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
 
-# Use cram for testing
+# Use cram for testing, and provide a shell console
 import: cram
+import: shell-console
