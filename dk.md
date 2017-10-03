@@ -20,7 +20,7 @@ dk.bootstrap() { :; }
 dk.setup()     { dk bootstrap; }
 dk.update()    { dk bootstrap; }
 dk.cibuild()   { dk test; }
-dk.clean()     { [[ "$BASHER_PREFIX" == "$PWD/.deps" ]] && rm -rf "$BASHER_PREFIX"; }
+dk.clean()     { [[ "$BASHER_PREFIX" == "$PWD/.deps" ]] && rm -rf "$BASHER_PREFIX"; hash -r; }
 
 dk.server()  { undefined-command server; }
 dk.test()    { undefined-command test; }

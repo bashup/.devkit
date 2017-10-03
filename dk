@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 readonly __bpkr_packed=yes
-{ if [[ $OSTYPE != cygwin && -e /dev/fd/0 ]]; then source /dev/fd/0; else source <(cat); fi; } <<'# --- END 220ff57628804ff4b0d0df06f78d1442f68d4178ab61ec27f26c8fa682b45583 ---'
+{ if [[ $OSTYPE != cygwin && -e /dev/fd/0 ]]; then source /dev/fd/0; else source <(cat); fi; } <<'# --- END 13d936b25b7cb974c45a5d57690f86c9b05facc060d004582dfa9105125bfe22 ---'
 if [[ ${BASHPACKR_LOADED-} != *\<bashpackr\>* ]]; then BASHPACKR_LOADED+=\<bashpackr\>
 import:()      { is-imported: "$1" || bpkr.__fatal "module '$1' wasn't packed"; }
 main:()        { if [[ $0 == ${BASH_SOURCE[1]} ]]; then "$@"; exit $?; fi; }
@@ -208,12 +208,12 @@ else
 fi
 
 fi
-# --- END 220ff57628804ff4b0d0df06f78d1442f68d4178ab61ec27f26c8fa682b45583 ---
+# --- END 13d936b25b7cb974c45a5d57690f86c9b05facc060d004582dfa9105125bfe22 ---
 dk.bootstrap() { :; }
 dk.setup()     { dk bootstrap; }
 dk.update()    { dk bootstrap; }
 dk.cibuild()   { dk test; }
-dk.clean()     { [[ "$BASHER_PREFIX" == "$PWD/.deps" ]] && rm -rf "$BASHER_PREFIX"; }
+dk.clean()     { [[ "$BASHER_PREFIX" == "$PWD/.deps" ]] && rm -rf "$BASHER_PREFIX"; hash -r; }
 
 dk.server()  { undefined-command server; }
 dk.test()    { undefined-command test; }
