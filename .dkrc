@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 
-# Use cram for testing, and provide a shell console
+# Use cram and watch for testing, and provide a shell console
 import: cram
+import: entr-watch
 import: shell-console
 
 # Auto-build dk and re-exec it if needed
-[[ dk.md -nt dk ]] && {
+if [[ dk.md -nt dk ]]; then
     require-any bashpackr basher install bashup/bashpackr
     bashpackr --pack dk.md dk
     exec "./dk" "$@"
-}
+fi

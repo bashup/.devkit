@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+dk.watch() {
+    require-any entr abort "Please install entr (http://entrproject.org/) to watch files" 69
+    require-any tput
+    [[ -v 1 ]] || set -- dk test # default to watching `dk test`
+    if watch.files | entr-watch "$@"; [[ (($?==2)) ]]; then
+        exec dk watch "$@"
+    fi
+}
+
+watch.files() {
+    fn_exists test.files && test.files
+    ls
+}
+
+entr-watch() {
+    # emulate watch's single-screen behavior with entr
+    entr -c -d -s "$* "'| head -n $(( $(tput lines) - 2 ))'
+}

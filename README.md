@@ -58,7 +58,11 @@ On subsequent runs of `script/test` (or `.devkit/dk test`), none of the cloning 
 
 ### .devkit Modules
 
-Currently, .devkit provides only three modules: `cram`, `shell-console`, and `virtualenv-support`.  You can activate them by adding "`import:` *modulename*" lines to your `.dkrc`, then defining any needed overrides.  (Typically, you override variables by defining them *before* the import, and functions by defining them *after*.)
+Currently, .devkit provides only four modules: `cram`, `entr-watch`, `shell-console`, and `virtualenv-support`.  You can activate them by adding "`import:` *modulename*" lines to your `.dkrc`, then defining any needed overrides.  (Typically, you override variables by defining them *before* the import, and functions by defining them *after*.)
+
+Note that these modules are not specially privileged in any way: you are not *required* to use them to obtain the specified functionality.  They are simply defaults and examples.
+
+So, for example, if you don't like how devkit's `watch` module works, you can write your own functions in `.dkrc` or in a package that you load as a development dependency (e.g. with `require mycommand github mygithubaccount/mycommand mycommand; source "$(command -v mycommand)"`).
 
 #### cram
 
@@ -74,17 +78,17 @@ You can then override the module's defaults by defining new functions.
 
 For example, if you wanted to change the files to be processed by cram, you can redefine the `cram.files` function, and to change the pager, redefine the `cram.pager` function.  To change the cram options, set the `CRAM` environment variable, or add a `.cramrc` file to your project.
 
+### entr-watch
+
+The [entr-watch](entr-watch) module defines a default `dk.watch` command to provide a `script/watch` command that watches for file changes (using [entr](http://entrproject.org/)) and reruns a command (`dk test` by default).  To enable it, `import: watch` in your `.dkrc`, and then optionally define a `watch.files` function to output which files to watch.  (By default, it outputs the current directory contents and any `test.files`.)
+
+The watch command requires the `entr` and `tput` commands be installed.  The former is used to watch files for changes, and the latter to compute how many lines of watched command output can be displayed without scrolling.  (The watched command's output is cut off using `head`, and the screen is cleared whenever the watched command is re-run.)
+
 #### shell-console
 
 The [shell-console](shell-console) module implements a `dk.console` function to provide a `script/console` command that starts a bash subshell with the devkit API and all variables available -- a bit like dropping into a debugger for the `dk` command.  This is particularly handy if you don't have or use `direnv`, as it basically gives you an alternative to typing `script/foo` or `.devkit/dk foo`: within the subshell you can just `dk foo`.
 
-To activate this in your project, just `import:` in your `.dkrc`, just like .devkit does:
-
-```shell
-import: shell-console
-```
-
-Running `dk console` or `script/console` will now enter the subshell.
+To activate this in your project, add an `import: shell-console` line to your `.dkrc`, just like .devkit does.  Running `dk console` or `script/console` will then enter a subshell.
 
 #### virtualenv-support
 
