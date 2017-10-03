@@ -58,33 +58,39 @@ On subsequent runs of `script/test` (or `.devkit/dk test`), none of the cloning 
 
 ### .devkit Modules
 
-Currently, .devkit provides only three modules: `cram`, `shell-console`, and `virtualenv-support`:
+Currently, .devkit provides only three modules: `cram`, `shell-console`, and `virtualenv-support`.  You can activate them by adding "`import:` *modulename*" lines to your `.dkrc`, then defining any needed overrides.  (Typically, you override variables by defining them *before* the import, and functions by defining them *after*.)
 
 #### cram
 
 The [cram](cram) module defines a default `dk.test` function to provide a `script/test` command that automatically installs a local copy of the [cram functional testing tool](https://bitheap.org/cram/), and runs it on `specs/*.cram.md` files with 4-space indents, colorizing the diff results (if `pygmentize` is available) and piping the result through less.
 
- .devkit itself uses this module in its own `.dkrc` by `import:`-ing it, like so:
+To use this module (as .devkit itself does),  `import:` it in your `.dkrc`, like so:
 
 ```shell
 import: cram
 ```
 
-You can do the same in your own `.dkrc`, and the same goes for any future .devkit modules.  You can then override a module's defaults by defining new functions.  For example, if you wanted to change the files to be processed by cram, you can redefine the `cram.files` function, and to change the pager, redefine the `cram.pager` function.  To change the cram options, set the `CRAM` environment variable, or add a cram config file to your project.
+You can then override the module's defaults by defining new functions.
+
+For example, if you wanted to change the files to be processed by cram, you can redefine the `cram.files` function, and to change the pager, redefine the `cram.pager` function.  To change the cram options, set the `CRAM` environment variable, or add a `.cramrc` file to your project.
 
 #### shell-console
 
 The [shell-console](shell-console) module implements a `dk.console` function to provide a `script/console` command that starts a bash subshell with the devkit API and all variables available -- a bit like dropping into a debugger for the `dk` command.  This is particularly handy if you don't have or use `direnv`, as it basically gives you an alternative to typing `script/foo` or `.devkit/dk foo`: within the subshell you can just `dk foo`.
 
-To activate this in your project, just `import:` in your .dkrc, just like .devkit does:
+To activate this in your project, just `import:` in your `.dkrc`, just like .devkit does:
 
 ```shell
 import: shell-console
 ```
 
+Running `dk console` or `script/console` will now enter the subshell.
+
 #### virtualenv-support
 
-The [virtualenv-support](virtualenv-support) module makes it easy to use a Python virtual environment as part of your project, giving you a `.deps/bin/python`.  Just `import: virtualenv-support` and you can access the `have-virtualenv` and `create-virtualenv` functions.  `have-virtualenv` returns success if you have an active virtualenv in `.deps`, while `create-virtualenv` creates a virtual environment with the specified options, as long as a virtualenv doesn't already exist.  So, you might do this in your `.dkrc` to create a Python 3 virtualenv:
+The [virtualenv-support](virtualenv-support) module makes it easy to use a Python virtual environment as part of your project, giving you a `.deps/bin/python`.  Just `import: virtualenv-support` and you can access the `have-virtualenv` and `create-virtualenv` functions.
+
+`have-virtualenv` returns success if you have an active virtualenv in `.deps`, while `create-virtualenv` creates a virtual environment with the specified options, as long as a virtualenv doesn't already exist.  So, you might do this in your `.dkrc` to create a Python 3 virtualenv:
 
 ```shell
 import: virtualenv-support
