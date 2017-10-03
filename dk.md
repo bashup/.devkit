@@ -33,30 +33,62 @@ abort()    { log "$1"; exit $2; }
 log()      { echo "$1" >&2; }
 ```
 
-## Basher and Dependency Management
+## Dependency Management Functions
+
+### basher
 
 For use in `.dkrc` commands, we provide an auto-installing wrapper function for  `basher`, that installs it locally if needed.  (The [realpaths](realpaths) module is also imported and made available.)
 
 ```shell
-import: realpaths
-
 basher() {
-    have basher || {
-        mkdir -p "$BASHER_ROOT" "$BASHER_INSTALL_BIN"
-        git clone -q --depth 1 https://github.com/basherpm/basher "$BASHER_ROOT"
-        realpath.symlink "$BASHER_ROOT/bin/basher" "$BASHER_INSTALL_BIN/basher"
-    }
-    hash -d basher 2>/dev/null
-    unset -f basher
+    require basher github basherpm/basher bin/basher
     "$BASHER_INSTALL_BIN/basher" "$@"
 }
 ```
+
+### github
+
+Not everything is installable with basher, of course, and basher itself needs to be installed via github.  So we have a `github` *user/repo [ref [bin1 bin2...]]* function, which clones the desired repo under `.deps` (if it's not already there) and links the named files to `.deps/bin`.  The *ref* can be a branch or tag; it defaults to `master` if unspecified.
+
+```shell
+github() {
+    [[ -d "$BASHER_PACKAGES_PATH/$1/.git" ]] && return
+    mkdir -p "$BASHER_PACKAGES_PATH/$1"
+    git clone -q --depth=1 -b "${2:-master}" "https://github.com/$1" "$BASHER_PACKAGES_PATH/$1"
+    local bin; for bin in "${@:3}"; do linkbin "$BASHER_PACKAGES_PATH/$1/$bin"; done
+}
+```
+
+### linkbin and catbin
+
+If you need to link something under a different name than the original, you can use `linkbin` *fullpath newname* instead of an extra argument to `github`.  But you have to provide the *full* path to the source, not just the path within a repository.  You can also use `catbin` *cmdname* *files...* to create an executable file in `.deps/bin`, either passing it files or piping it text via standard input.
+
+```shell
+import: realpaths
+
+linkbin() {
+    mkdir -p "$BASHER_INSTALL_BIN"
+    realpath.symlink "$1" "$BASHER_INSTALL_BIN/${2:-${1##*/}}"
+    unhash "${2:-${1##*/}}"
+}
+
+catbin() {
+    cat "${@:2}" >"$BASHER_INSTALL_BIN/$1"
+    chmod +x "$BASHER_INSTALL_BIN/$1"
+    unhash "$1"
+}
+
+unhash() { hash -d "$@" || true; } 2>/dev/null
+
+```
+
+### have, require, have-any, require-any
 
 To help decide whether dependencies are needed, we offer the `have`/`require`  and `have-any`/`require-any` functions.  The plain varieties check for a locally-installed version of the named command, while the `-any` versions check for a command anywhere on the `PATH`.  The `require` functions run their *cmd args...* tail if their first argument isn't available, or, if no *cmd args...* is given, default to an error message that aborts the script with the [EX_UNAVAILABLE](https://www.freebsd.org/cgi/man.cgi?query=sysexits&sektion=3#DESCRIPTION) exit code.
 
 ```shell
 have()     { [[ -x "$BASHER_INSTALL_BIN/$1" ]]; }
-have-any() { hash -d "$@"; command -v "$@"; } >/dev/null 2>&1
+have-any() { unhash "$@"; command -v "$@"; } >/dev/null 2>&1
 
 require() {
     have "$1" || __require "$1" "$1 must be installed to $BASHER_INSTALL_BIN/" "${@:2}"
@@ -66,7 +98,9 @@ require-any() {
     have-any "$1" || __require "$1" "Please install $1 to perform this operation" "${@:2}"
 }
 
-__require() { if (($#>2)); then "${@:3}"; hash -d "$1" 2>/dev/null; else abort "$2" 69; fi }
+__require() {
+    if (($#>2)); then "${@:3}"; unhash "$1"; else abort "$2" 69; fi
+}
 
 ```
 ## `import:` shim

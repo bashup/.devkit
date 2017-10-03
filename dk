@@ -224,20 +224,34 @@ undefined-command() {
 }
 abort()    { log "$1"; exit $2; }
 log()      { echo "$1" >&2; }
-import: realpaths
-
 basher() {
-    have basher || {
-        mkdir -p "$BASHER_ROOT" "$BASHER_INSTALL_BIN"
-        git clone -q --depth 1 https://github.com/basherpm/basher "$BASHER_ROOT"
-        realpath.symlink "$BASHER_ROOT/bin/basher" "$BASHER_INSTALL_BIN/basher"
-    }
-    hash -d basher 2>/dev/null
-    unset -f basher
+    require basher github basherpm/basher bin/basher
     "$BASHER_INSTALL_BIN/basher" "$@"
 }
+github() {
+    [[ -d "$BASHER_PACKAGES_PATH/$1/.git" ]] && return
+    mkdir -p "$BASHER_PACKAGES_PATH/$1"
+    git clone -q --depth=1 -b "${2:-master}" "https://github.com/$1" "$BASHER_PACKAGES_PATH/$1"
+    local bin; for bin in "${@:3}"; do linkbin "$BASHER_PACKAGES_PATH/$1/$bin"; done
+}
+import: realpaths
+
+linkbin() {
+    mkdir -p "$BASHER_INSTALL_BIN"
+    realpath.symlink "$1" "$BASHER_INSTALL_BIN/${2:-${1##*/}}"
+    unhash "${2:-${1##*/}}"
+}
+
+catbin() {
+    cat "${@:2}" >"$BASHER_INSTALL_BIN/$1"
+    chmod +x "$BASHER_INSTALL_BIN/$1"
+    unhash "$1"
+}
+
+unhash() { hash -d "$@" || true; } 2>/dev/null
+
 have()     { [[ -x "$BASHER_INSTALL_BIN/$1" ]]; }
-have-any() { hash -d "$@"; command -v "$@"; } >/dev/null 2>&1
+have-any() { unhash "$@"; command -v "$@"; } >/dev/null 2>&1
 
 require() {
     have "$1" || __require "$1" "$1 must be installed to $BASHER_INSTALL_BIN/" "${@:2}"
@@ -247,7 +261,9 @@ require-any() {
     have-any "$1" || __require "$1" "Please install $1 to perform this operation" "${@:2}"
 }
 
-__require() { if (($#>2)); then "${@:3}"; hash -d "$1" 2>/dev/null; else abort "$2" 69; fi }
+__require() {
+    if (($#>2)); then "${@:3}"; unhash "$1"; else abort "$2" 69; fi
+}
 
 [[ ${__bpkr_packed-} ]] && import:() {
     is-imported: "$1" && return
