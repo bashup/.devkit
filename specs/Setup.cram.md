@@ -20,6 +20,7 @@ Without .git:
     total * (glob)
     * bootstrap (glob)
     * cibuild -> bootstrap (glob)
+    * clean -> bootstrap (glob)
     * console -> bootstrap (glob)
     * server -> bootstrap (glob)
     * setup -> bootstrap (glob)
@@ -44,6 +45,7 @@ With git (clean):
     A  .gitignore
     A  script/bootstrap
     A  script/cibuild
+    A  script/clean
     A  script/console
     A  script/server
     A  script/setup
@@ -61,12 +63,13 @@ With git (dirty):
 
     $ git commit -m "Added devkit"
     [master (root-commit) *] Added devkit (glob)
-     10 files changed, 49 insertions(+)
+     11 files changed, 50 insertions(+)
      create mode 100644 .dkrc
      create mode 100644 .envrc
      create mode 100644 .gitignore
      create mode 100755 script/bootstrap
      create mode 120000 script/cibuild
+     create mode 120000 script/clean
      create mode 120000 script/console
      create mode 120000 script/server
      create mode 120000 script/setup

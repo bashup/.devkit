@@ -21,7 +21,7 @@ do-setup() {
     create-or-inform script/bootstrap ${BASH_SOURCE%/*}/script/bootstrap
     chmod +x script/bootstrap
 
-    for cmd in cibuild console server setup test update; do
+    for cmd in cibuild clean console server setup test update; do
         if [[ -f script/$cmd && ! -L script/$cmd ]]; then
             echo "script/$cmd is not a symlink; please remove it"
         elif [[ ! -L script/$cmd ]]; then
