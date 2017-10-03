@@ -3,3 +3,10 @@
 # Use cram for testing, and provide a shell console
 import: cram
 import: shell-console
+
+# Auto-build dk and re-exec it if needed
+[[ dk.md -nt dk ]] && {
+    require-any bashpackr basher install bashup/bashpackr
+    bashpackr --pack dk.md dk
+    exec "./dk" "$@"
+}
