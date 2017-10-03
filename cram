@@ -9,8 +9,7 @@ test.files() { cram.files; }
 dk.test() { dk cram; }
 dk.cram() {
     dk bootstrap;
-    have-any cram ||
-        abort "Please install cram (https://bitheap.org/cram/) to run tests" 69
+    require cram install-cram
     if (($#)); then
          xargs -a <(cram.files) cram "$@"
     else xargs -a <(cram.files) cram  | {
@@ -21,6 +20,15 @@ dk.cram() {
         fi
     } | cram.pager
     fi
+}
+
+install-cram() {
+    require-any python
+    github brodie/cram
+    catbin cram <(
+        echo '#!/usr/bin/env bash'
+        echo 'PYTHONPATH=$BASHER_PACKAGES_PATH/brodie/cram python -m cram "$@"'
+    )
 }
 
 slurpy() {
