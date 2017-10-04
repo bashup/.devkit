@@ -37,13 +37,16 @@ log()      { echo "$1" >&2; }
 
 ### basher
 
-For use in `.dkrc` commands, we provide an auto-installing wrapper function for  `basher`, that installs it locally if needed.  (The [realpaths](realpaths) module is also imported and made available.)
+For use in `.dkrc` commands, we provide an auto-installing wrapper function for  `basher`, that installs it locally if needed.  (The [realpaths](https://github.com/bashup/realpaths) and [relative-symlink](relative-symlink) modules are also imported and made available.)
 
 ```shell
 basher() {
-    require basher github basherpm/basher bin/basher
+    require basher github basherpm/basher master bin/basher
     "$BASHER_INSTALL_BIN/basher" "$@"
 }
+
+import: realpaths
+import: relative-symlink
 ```
 
 ### github
@@ -64,11 +67,9 @@ github() {
 If you need to link something under a different name than the original, you can use `linkbin` *fullpath newname* instead of an extra argument to `github`.  But you have to provide the *full* path to the source, not just the path within a repository.  You can also use `catbin` *cmdname* *files...* to create an executable file in `.deps/bin`, either passing it files or piping it text via standard input.
 
 ```shell
-import: realpaths
-
 linkbin() {
     mkdir -p "$BASHER_INSTALL_BIN"
-    realpath.symlink "$1" "$BASHER_INSTALL_BIN/${2:-${1##*/}}"
+    relative-symlink "$1" "$BASHER_INSTALL_BIN/${2:-${1##*/}}"
     unhash "${2:-${1##*/}}"
 }
 
@@ -143,7 +144,7 @@ loco_loadproject() {
 
     have dk || {
         mkdir -p "$BASHER_INSTALL_BIN"
-        realpath.symlink "$BASH_SOURCE" "$BASHER_INSTALL_BIN/dk"
+        relative-symlink "$BASH_SOURCE" "$BASHER_INSTALL_BIN/dk"
     }
 
     $LOCO_LOAD "$1"

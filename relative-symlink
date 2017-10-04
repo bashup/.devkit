@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+import: realpaths
+
+relative-symlink() {
+    # Try to create a relative symlink if ln -r or Python are available; otherwise absolute
+    if ln -sr "$@" >/dev/null 2>&1; then
+        return
+    elif command -v python >/dev/null; then
+        python -c 'import sys, os.path; os.symlink(os.path.relpath(*sys.argv[1:]), sys.argv[2])' "$@"
+    else
+        # fallback to absolute path
+        realpath.join "$1"; ln -s "$REPLY" "$2"
+    fi
+}

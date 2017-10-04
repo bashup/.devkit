@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+match "realpaths" with ".deps/bin/realpaths" using command basher install bashup/realpaths

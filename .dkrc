@@ -9,5 +9,5 @@ import: shell-console
 if [[ dk.md -nt dk ]]; then
     require-any bashpackr basher install bashup/bashpackr
     bashpackr --pack dk.md dk
-    exec "./dk" "$@"
+    exec "./dk" "${LOCO_ARGS[@]}"
 fi
