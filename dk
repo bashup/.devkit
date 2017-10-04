@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 readonly __bpkr_packed=yes
-{ if [[ $OSTYPE != cygwin && -e /dev/fd/0 ]]; then source /dev/fd/0; else source <(cat); fi; } <<'# --- END bc8c40e49ed40d3569a5c1816283b14a6e3ee2812c3c0bac4af75cdb672751e2 ---'
+{ if [[ $OSTYPE != cygwin && -e /dev/fd/0 ]]; then source /dev/fd/0; else source <(cat); fi; } <<'# --- END cc24d363f93d7613bffc70255c067f3fb7c46c7adbb786cad6a7a5a9e77fd28a ---'
 if [[ ${BASHPACKR_LOADED-} != *\<bashpackr\>* ]]; then BASHPACKR_LOADED+=\<bashpackr\>
 import:()      { is-imported: "$1" || bpkr.__fatal "module '$1' wasn't packed"; }
 main:()        { if [[ $0 == ${BASH_SOURCE[1]} ]]; then "$@"; exit $?; fi; }
@@ -234,7 +234,7 @@ else
 fi
 
 fi
-# --- END bc8c40e49ed40d3569a5c1816283b14a6e3ee2812c3c0bac4af75cdb672751e2 ---
+# --- END cc24d363f93d7613bffc70255c067f3fb7c46c7adbb786cad6a7a5a9e77fd28a ---
 dk.bootstrap() { :; }
 dk.setup()     { dk bootstrap; }
 dk.update()    { dk bootstrap; }
@@ -320,7 +320,7 @@ loco_loadproject() {
 
     have dk || {
         mkdir -p "$BASHER_INSTALL_BIN"
-        relative-symlink "$BASH_SOURCE" "$BASHER_INSTALL_BIN/dk"
+        relative-symlink .devkit/dk "$BASHER_INSTALL_BIN/dk"
     }
 
     $LOCO_LOAD "$1"

@@ -6,7 +6,7 @@ import: entr-watch
 import: shell-console
 
 # Auto-build dk and re-exec it if needed
-if [[ dk.md -nt dk ]]; then
+if [[ ! -x dk || dk.md -nt dk ]]; then
     require-any bashpackr basher install bashup/bashpackr
     bashpackr --pack dk.md dk
     exec "./dk" "${LOCO_ARGS[@]}"

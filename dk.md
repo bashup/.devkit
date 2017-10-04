@@ -144,7 +144,7 @@ loco_loadproject() {
 
     have dk || {
         mkdir -p "$BASHER_INSTALL_BIN"
-        relative-symlink "$BASH_SOURCE" "$BASHER_INSTALL_BIN/dk"
+        relative-symlink .devkit/dk "$BASHER_INSTALL_BIN/dk"
     }
 
     $LOCO_LOAD "$1"
