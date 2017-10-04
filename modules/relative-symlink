@@ -11,6 +11,6 @@ relative-symlink() {
         python -c 'import sys, os.path; os.symlink(os.path.relpath(*sys.argv[1:]), sys.argv[2])' "$@"
     else
         # fallback to absolute path
-        realpath.join "$1"; ln -sf "$REPLY" "$2"
+        realpath.absolute "$1"; ln -sf "$REPLY" "$2"
     fi
 }
