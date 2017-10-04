@@ -106,14 +106,14 @@ __require() {
 ```
 ## `import:` shim
 
-If `dk` is being used in packed form, then it's using a stub  `import:` that can't import anything dynamically.  To allow dynamic `import:` of `devkit` modules without installing bashpackr, we define a shim that tries to source `.devkit/$module` first, before falling back to installing bashpackr and using that.
+If `dk` is being used in packed form, then it's using a stub  `import:` that can't import anything dynamically.  To allow dynamic `import:` of `devkit` modules without installing bashpackr, we define a shim that tries to source `.devkit/modules/$module` first, before falling back to installing bashpackr and using that.
 
 ```shell
 [[ ${__bpkr_packed-} ]] && import:() {
     is-imported: "$1" && return
-    if [[ -f "$LOCO_ROOT/.devkit/$1" ]]; then
+    if [[ -f "$LOCO_ROOT/.devkit/modules/$1" ]]; then
         BASHPACKR_LOADED+="<$1>"
-        source "$LOCO_ROOT/.devkit/$1"
+        source "$LOCO_ROOT/.devkit/modules/$1"
     else
         require bashpackr basher install bashup/bashpackr
         source "$BASHER_INSTALL_BIN/bashpackr"
