@@ -37,7 +37,7 @@ log()      { echo "$1" >&2; }
 
 ### basher
 
-For use in `.dkrc` commands, we provide an auto-installing wrapper function for  `basher`, that installs it locally if needed.  (The [realpaths](https://github.com/bashup/realpaths) and [relative-symlink](relative-symlink) modules are also imported and made available.)
+For use in `.dkrc` commands, we provide an auto-installing wrapper function for  `basher`, that installs it locally if needed.
 
 ```shell
 basher() {
@@ -45,8 +45,6 @@ basher() {
     "$BASHER_INSTALL_BIN/basher" "$@"
 }
 
-import: realpaths
-import: relative-symlink
 ```
 
 ### github
@@ -104,6 +102,21 @@ __require() {
 }
 
 ```
+### Symlinks and Path Handling
+
+```shell
+relative-symlink() {
+    # Used to create relative links in .deps/bin
+    realpath.dirname "$2"; realpath.relative "$1" "$REPLY"; ln -sf "$REPLY" "$2"; return $?
+}
+
+# We've now defined all the functions we need to be able to fetch our own dependencies
+# using the `github` and/or `basher` functions, so we can start importing them now:
+
+import: realpaths
+
+```
+
 ## `import:` shim
 
 If `dk` is being used in packed form, then it's using a stub  `import:` that can't import anything dynamically.  To allow dynamic `import:` of `devkit` modules without installing bashpackr, we define a shim that tries to source `.devkit/modules/$module` first, before falling back to installing bashpackr and using that.

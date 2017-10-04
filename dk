@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 readonly __bpkr_packed=yes
-{ if [[ $OSTYPE != cygwin && -e /dev/fd/0 ]]; then source /dev/fd/0; else source <(cat); fi; } <<'# --- END 2ac62dc8810bf7a1588e518026c6ad11a683545097e45ae759fb0e0c2756498d ---'
+{ if [[ $OSTYPE != cygwin && -e /dev/fd/0 ]]; then source /dev/fd/0; else source <(cat); fi; } <<'# --- END 619b04fd7d26429f16d3dc129a1b0ef60977235cb67b2e871becf9ca5065e3dd ---'
 if [[ ${BASHPACKR_LOADED-} != *\<bashpackr\>* ]]; then BASHPACKR_LOADED+=\<bashpackr\>
 import:()      { is-imported: "$1" || bpkr.__fatal "module '$1' wasn't packed"; }
 main:()        { if [[ $0 == ${BASH_SOURCE[1]} ]]; then "$@"; exit $?; fi; }
@@ -12,10 +12,10 @@ fi
 if [[ ${BASHPACKR_LOADED-} != *\<realpaths\>* ]]; then BASHPACKR_LOADED+=\<realpaths\>
 #!/usr/bin/env bash
 
-realpath.location()  { realpath.resolve "$1"; realpath.join "$REPLY" ".."; }
-realpath.absolute()  { realpath.resolve "$1"; realpath.join "$REPLY"; }
+realpath.location()  { realpath.follow "$1"; realpath.absolute "$REPLY" ".."; }
+realpath.resolved()  { realpath.follow "$1"; realpath.absolute "$REPLY"; }
 
-realpath.resolve() {
+realpath.follow() {
     local target
     while [[ -L "$1" ]] && target=$(readlink -- "$1"); do
         realpath.dirname "$1"
@@ -30,7 +30,7 @@ realpath.resolve() {
 }
 
 
-realpath.join() {
+realpath.absolute() {
     set -- "$PWD" "$@"
     while (($#>1)); do
         case $2 in
@@ -66,31 +66,23 @@ realpath.basename() {
 
 realpath.canonical() {
     local target=""
-    realpath.resolve "$1"; set -- "$REPLY"  # $1 is now resolved
+    realpath.follow "$1"; set -- "$REPLY"   # $1 is now resolved
     realpath.basename "$1"; target=$REPLY   # target = basename $1
     realpath.dirname "$1";
     [[ $REPLY != "$1" ]] && realpath.canonical "$REPLY"; # recurse unless root
-    realpath.join "$REPLY" "$target";       # combine canon parent w/basename
+    realpath.absolute "$REPLY" "$target";   # combine canon parent w/basename
 }
 
-fi
-if [[ ${BASHPACKR_LOADED-} != *\<relative-symlink\>* ]]; then BASHPACKR_LOADED+=\<relative-symlink\>
-#!/usr/bin/env bash
-
-import: realpaths
-
-relative-symlink() {
-    # Try to create a relative symlink if ln -r or Python are available; otherwise absolute
-    if ln -sfr "$@" >/dev/null 2>&1; then
-        return
-    elif command -v python >/dev/null; then
-        [[ -L "$2" ]] && rm "$2";
-        python -c 'import sys, os.path; os.symlink(os.path.relpath(*sys.argv[1:]), sys.argv[2])' "$@"
-    else
-        # fallback to absolute path
-        realpath.absolute "$1"; ln -sf "$REPLY" "$2"
-    fi
+realpath.relative() {
+    local target=""
+    realpath.absolute "$1"; set -- "$REPLY" "${@:2}"; realpath.absolute "${2-$PWD}" X
+    while realpath.dirname "$REPLY"; [[ "$1" != "$REPLY" && "$1" == "${1#${REPLY%/}/}" ]]; do
+        target=../$target
+    done
+    [[ $1 == "$REPLY" ]] && REPLY=${target%/} || REPLY="$target${1#${REPLY%/}/}"
+    REPLY=${REPLY:-.}
 }
+
 fi
 if [[ ${BASHPACKR_LOADED-} != *\<loco\>* ]]; then BASHPACKR_LOADED+=\<loco\>
 #!/usr/bin/env bash
@@ -235,7 +227,7 @@ else
 fi
 
 fi
-# --- END 2ac62dc8810bf7a1588e518026c6ad11a683545097e45ae759fb0e0c2756498d ---
+# --- END 619b04fd7d26429f16d3dc129a1b0ef60977235cb67b2e871becf9ca5065e3dd ---
 dk.bootstrap() { :; }
 dk.setup()     { dk bootstrap; }
 dk.update()    { dk bootstrap; }
@@ -256,8 +248,6 @@ basher() {
     "$BASHER_INSTALL_BIN/basher" "$@"
 }
 
-import: realpaths
-import: relative-symlink
 github() {
     [[ -d "$BASHER_PACKAGES_PATH/$1/.git" ]] && return
     mkdir -p "$BASHER_PACKAGES_PATH/$1"
@@ -292,6 +282,16 @@ require-any() {
 __require() {
     if (($#>2)); then "${@:3}"; unhash "$1"; else abort "$2" 69; fi
 }
+
+relative-symlink() {
+    # Used to create relative links in .deps/bin
+    realpath.dirname "$2"; realpath.relative "$1" "$REPLY"; ln -sf "$REPLY" "$2"; return $?
+}
+
+# We've now defined all the functions we need to be able to fetch our own dependencies
+# using the `github` and/or `basher` functions, so we can start importing them now:
+
+import: realpaths
 
 [[ ${__bpkr_packed-} ]] && import:() {
     is-imported: "$1" && return

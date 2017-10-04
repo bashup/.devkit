@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
 try "modules/$module"
-match "@(loco|realpaths)" with ".deps/bin/$module" using command basher install "bashup/$module"
+match "@(loco|realpaths)" with ".deps/bashup/$module/$module" using github "bashup/$module"
