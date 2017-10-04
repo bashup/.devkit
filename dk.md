@@ -1,6 +1,6 @@
-#!/usr/bin/env bashpackr
+#!/usr/bin/env bash
 : '
-<!-- ex: set syntax=markdown : '; eval "$(sed -ne '/^```shell$/,/^```$/{/^```/d; p}' "$BASH_SOURCE")"; return $? # -->
+<!-- ex: set syntax=markdown : '; [[ -v BASHPACKR_LOADED ]] || source "$(command -v bashpackr)"; eval "$(sed -ne '/^```shell$/,/^```$/{/^```/d; p}' "$BASH_SOURCE")"; return $? # -->
 
 # dk - the devkit CLI
 

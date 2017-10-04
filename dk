@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 readonly __bpkr_packed=yes
-{ if [[ $OSTYPE != cygwin && -e /dev/fd/0 ]]; then source /dev/fd/0; else source <(cat); fi; } <<'# --- END 619b04fd7d26429f16d3dc129a1b0ef60977235cb67b2e871becf9ca5065e3dd ---'
+{ if [[ $OSTYPE != cygwin && -e /dev/fd/0 ]]; then source /dev/fd/0; else source <(cat); fi; } <<'# --- END 6fb07b3514f51013242f002b8fbcef2f44d1c101f2cbf3e1de7a665c09b4255a ---'
 if [[ ${BASHPACKR_LOADED-} != *\<bashpackr\>* ]]; then BASHPACKR_LOADED+=\<bashpackr\>
 import:()      { is-imported: "$1" || bpkr.__fatal "module '$1' wasn't packed"; }
 main:()        { if [[ $0 == ${BASH_SOURCE[1]} ]]; then "$@"; exit $?; fi; }
@@ -227,7 +227,7 @@ else
 fi
 
 fi
-# --- END 619b04fd7d26429f16d3dc129a1b0ef60977235cb67b2e871becf9ca5065e3dd ---
+# --- END 6fb07b3514f51013242f002b8fbcef2f44d1c101f2cbf3e1de7a665c09b4255a ---
 dk.bootstrap() { :; }
 dk.setup()     { dk bootstrap; }
 dk.update()    { dk bootstrap; }
