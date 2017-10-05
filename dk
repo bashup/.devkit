@@ -85,8 +85,8 @@ realpath.relative() {
 
 fi
 if [[ ${BASHPACKR_LOADED-} != *\<loco\>* ]]; then BASHPACKR_LOADED+=\<loco\>
-#!/usr/bin/env bash
-
+#!/usr/bin/env bashpackr
+# ex: set ft=bash :
 # LICENSE
 # -------
 #
@@ -138,12 +138,12 @@ print_if_exists() {
     for f in ${@:1:${#}-1}; do [[ -f "$f" ]] && echo "${d%/}/$f" && return 0; done
     return 1
 }
-
+import: realpaths
 walkup() {
-    local d="$(realpath "$1")"
+    realpath.resolved "$1"; local d="$REPLY"
     until "${@:2}" "$d"; do
         [[ "$d" != "/" ]] || return 1
-        d="$(dirname "$d")"
+        realpath.dirname "$d"; d="$REPLY"
     done
 }
 
