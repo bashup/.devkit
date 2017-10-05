@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 readonly __bpkr_packed=yes
-{ if [[ $OSTYPE != cygwin && -e /dev/fd/0 ]]; then source /dev/fd/0; else source <(cat); fi; } <<'# --- END 6fb07b3514f51013242f002b8fbcef2f44d1c101f2cbf3e1de7a665c09b4255a ---'
+{ if [[ $OSTYPE != cygwin && -e /dev/fd/0 ]]; then source /dev/fd/0; else source <(cat); fi; } <<'# --- END 2e21c5ee1249bbec1307d95a322b67ced685cedd6fed4296b6f6880ef1fcfcdb ---'
 if [[ ${BASHPACKR_LOADED-} != *\<bashpackr\>* ]]; then BASHPACKR_LOADED+=\<bashpackr\>
 import:()      { is-imported: "$1" || bpkr.__fatal "module '$1' wasn't packed"; }
 main:()        { if [[ $0 == ${BASH_SOURCE[1]} ]]; then "$@"; exit $?; fi; }
@@ -227,7 +227,7 @@ else
 fi
 
 fi
-# --- END 6fb07b3514f51013242f002b8fbcef2f44d1c101f2cbf3e1de7a665c09b4255a ---
+# --- END 2e21c5ee1249bbec1307d95a322b67ced685cedd6fed4296b6f6880ef1fcfcdb ---
 dk.bootstrap() { :; }
 dk.setup()     { dk bootstrap; }
 dk.update()    { dk bootstrap; }
@@ -316,7 +316,7 @@ loco_loadproject() {
     cd "$LOCO_ROOT"
     [[ -f .envrc ]] && source .envrc
 
-    [[ ! -v BASHER_INSTALL_BIN || ${BASHER_INSTALL_BIN#$PWD} == "$BASHER_INSTALL_BIN" ]] &&
+    [[ ! "${BASHER_INSTALL_BIN-}" || ${BASHER_INSTALL_BIN#$PWD} == "$BASHER_INSTALL_BIN" ]] &&
         abort "Your .envrc must define a *local* installation of basher!" 78 # EX_CONFIG
 
     have dk || {

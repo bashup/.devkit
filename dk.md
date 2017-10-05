@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 : '
-<!-- ex: set syntax=markdown : '; [[ -v BASHPACKR_LOADED ]] || source "$(command -v bashpackr)"; eval "$(sed -ne '/^```shell$/,/^```$/{/^```/d; p}' "$BASH_SOURCE")"; return $? # -->
+<!-- ex: set syntax=markdown : '; [[ "${BASHPACKR_LOADED-}" ]] || source "$(command -v bashpackr)"; eval "$(sed -ne '/^```shell$/,/^```$/{/^```/d; p}' "$BASH_SOURCE")"; return $? # -->
 
 # dk - the devkit CLI
 
@@ -152,7 +152,7 @@ loco_loadproject() {
     cd "$LOCO_ROOT"
     [[ -f .envrc ]] && source .envrc
 
-    [[ ! -v BASHER_INSTALL_BIN || ${BASHER_INSTALL_BIN#$PWD} == "$BASHER_INSTALL_BIN" ]] &&
+    [[ ! "${BASHER_INSTALL_BIN-}" || ${BASHER_INSTALL_BIN#$PWD} == "$BASHER_INSTALL_BIN" ]] &&
         abort "Your .envrc must define a *local* installation of basher!" 78 # EX_CONFIG
 
     have dk || {
