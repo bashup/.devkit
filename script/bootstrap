@@ -6,6 +6,7 @@ if ! [[ -f .dkrc ]]; then
 fi
 
 if ! [[ -d .devkit ]]; then
+    # Modify this line if you want to pin a particular .devkit revision:
     git clone -q --depth 1 https://github.com/bashup/.devkit
 fi
 

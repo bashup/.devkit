@@ -5,9 +5,13 @@ import: cram
 import: entr-watch
 import: shell-console
 
-# Auto-build dk and re-exec it if needed
-if [[ ! -x dk || dk.md -nt dk ]]; then
+dk.rebuild() {
     require-any bashpackr basher install bashup/bashpackr
     bashpackr --pack dk.md dk
+}
+
+# Auto-build dk and re-exec it if needed
+if [[ ! -x dk || dk.md -nt dk ]]; then
+    dk.rebuild; touch dk
     exec "./dk" "${LOCO_ARGS[@]}"
 fi
