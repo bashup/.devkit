@@ -10,9 +10,10 @@ dk.test() { dk cram; }
 dk.cram() {
     dk bootstrap;
     require cram install-cram
+    IFS=$'\n' eval 'local cramfiles=($(cram.files))'
     if (($#)); then
-         xargs -a <(cram.files) cram "$@"
-    else xargs -a <(cram.files) cram  | {
+         cram "$@" "${cramfiles[@]}"
+    else cram "${cramfiles[@]}" | {
         if have-any pygmentize; then
             pygmentize -l diff | slurpy
         else
