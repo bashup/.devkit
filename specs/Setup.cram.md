@@ -38,6 +38,8 @@ With git (clean):
     $ rm -rf .envrc .dkrc script
     $ git init
     Initialized empty Git repository in */Setup.cram.md/.git/ (glob)
+    $ git config user.name tester
+    $ git config user.email test@example.com
     $ .devkit/setup
     devkit setup is complete; you can now commit the changes
     $ git status --porcelain
