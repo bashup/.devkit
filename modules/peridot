@@ -5,6 +5,9 @@ peridot.pager() { less -FR; }
 test.files() { peridot.files; }
 
 dk.test() { dk peridot; }
+
+export PERIDOT_OPTIONS=--force-colors
+
 dk.peridot() {
     dk bootstrap
     dk use: composer
@@ -12,6 +15,6 @@ dk.peridot() {
     IFS=$'\n' eval 'local specfiles=($(peridot.files))'
     if (($#)); then
          peridot "$@" "${specfiles[@]}"
-    else peridot --force-colors "${specfiles[@]}" | peridot.pager
+    else peridot ${PERIDOT_OPTIONS-} "${specfiles[@]}" | peridot.pager
     fi
 }
