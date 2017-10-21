@@ -64,6 +64,8 @@ Note that these modules are not specially privileged in any way: you are not *re
 
 So, for example, if you don't like how devkit's `dk.entr-watch` module works, you can write your own functions in `.dkrc` or in a package that you load as a development dependency (e.g. with `require mycommand github mygithubaccount/mycommand mycommand; source "$(command -v mycommand)"`).
 
+You can also place your own devkit modules under a  `.devkit-modules` directory in your project root, and `dk use:` will look for modules there before searching .devkit's bundled modules.  You can also access modules from your `.deps` subdirectories by adding symlinks to them from `.devkit-modules`.  (Just make sure your `.dkrc` installs those dependencies *before* `dk use:`-ing them, if they're not there yet.)
+
 #### cram
 
 The [cram](modules/cram) module defines a default `dk.test` function to provide a `script/test` command that automatically installs a local copy of the [cram functional testing tool](https://bitheap.org/cram/), and runs it on `specs/*.cram.md` files with 4-space indents, colorizing the diff results (if `pygmentize` is available) and piping the result through less.

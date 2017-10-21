@@ -116,15 +116,23 @@ relative-symlink() {
 devkit modules are loaded using the `dk use` command, which loads modules from `.devkit/modules` a maximum of once.
 
 ```shell
+__find_dk_module() {
+    local p
+    for p in .devkit-modules .devkit/modules; do
+        p=$LOCO_ROOT/$p/$1
+        if [[ -f $p ]]; then REPLY=$p; return; fi
+    done
+    return 1
+}
+
 dk.use:() {
-    while (($#)); do
-        if [[ ${DEVKIT_MODULES-} == *"<$1>"* ]]; then
-            continue   # already loaded
-        elif [[ -f "$LOCO_ROOT/.devkit/modules/$1" ]]; then
-            DEVKIT_MODULES+="<$1>"
-            source "$LOCO_ROOT/.devkit/modules/$1"
+    while (($#)); do local m=$1; shift
+        if [[ ${DEVKIT_MODULES-} == *"<$m>"* ]]; then
+            : # already loaded
+        elif __find_dk_module "$m"; then
+            DEVKIT_MODULES+="<$m>"; source "$REPLY"
         else
-            abort "Unknown module $1; maybe you need to update .devkit?" 69
+            abort "Unknown module '$m'; maybe you need to update .devkit or install a dependency?" 69
         fi
         shift
     done
