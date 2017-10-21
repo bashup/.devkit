@@ -134,7 +134,6 @@ dk.use:() {
         else
             abort "Unknown module '$m'; maybe you need to update .devkit or install a dependency?" 69
         fi
-        shift
     done
 }
 ```
