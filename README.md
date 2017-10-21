@@ -58,7 +58,7 @@ On subsequent runs of `script/test` (or `.devkit/dk test`), none of the cloning 
 
 ### .devkit Modules
 
-Currently, .devkit provides only four modules: `cram`, `entr-watch`, `shell-console`, and `virtualenv-support`.  You can activate them by adding "`dk use:` *modules...*" to your `.dkrc`, then defining any needed overrides.  (Typically, you override variables by defining them *before* the `dk use:` line(s), and functions by defining them *after*.)
+Currently, .devkit provides only four modules: `cram`, `entr-watch`, `shell-console`, and `virtualenv`.  You can activate them by adding "`dk use:` *modules...*" to your `.dkrc`, then defining any needed overrides.  (Typically, you override variables by defining them *before* the `dk use:` line(s), and functions by defining them *after*.)
 
 Note that these modules are not specially privileged in any way: you are not *required* to use them to obtain the specified functionality.  They are simply defaults and examples.
 
@@ -90,14 +90,14 @@ The [shell-console](modules/shell-console) module implements a `dk.console` func
 
 To activate this in your project, add a `dk use: shell-console` line to your `.dkrc`, just like .devkit does.  Running `dk console` or `script/console` will then enter a subshell.
 
-#### virtualenv-support
+#### virtualenv
 
-The [virtualenv-support](modules/virtualenv-support) module makes it easy to use a Python virtual environment as part of your project, giving you a `.deps/bin/python`.  Just `dk use: virtualenv-support` and you can access the `have-virtualenv` and `create-virtualenv` functions.
+The [virtualenv](modules/virtualenv) module makes it easy to use a Python virtual environment as part of your project, giving you a `.deps/bin/python`.  Just `dk use: virtualenv` and you can access the `have-virtualenv` and `create-virtualenv` functions.
 
 `have-virtualenv` returns success if you have an active virtualenv in `.deps`, while `create-virtualenv` creates a virtual environment with the specified options, as long as a virtualenv doesn't already exist.  So, you might do this in your `.dkrc` to create a Python 3 virtualenv:
 
 ```shell
-dk use: virtualenv-support
+dk use: virtualenv
 create-virtualenv -p python3
 ```
 
