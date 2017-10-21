@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+peridot.files() { ls specs/*.spec.php; }
+peridot.pager() { less -FR; }
+test.files() { peridot.files; }
+
+dk.test() { dk peridot; }
+dk.peridot() {
+    dk bootstrap
+    dk use: composer
+    require-composer peridot peridot-php/peridot
+    IFS=$'\n' eval 'local specfiles=($(peridot.files))'
+    if (($#)); then
+         peridot "$@" "${specfiles[@]}"
+    else peridot --force-colors "${specfiles[@]}" | peridot.pager
+    fi
+}

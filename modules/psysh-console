@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+dk use: composer
+
+dk.console() { psysh-console "$@"; }
+
+psysh-console() {
+    require-composer psysh psy/psysh
+    psysh "$@";
+}
+

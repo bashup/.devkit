@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+have-composer() { [[ -x vendor/bin/$1 ]]; }
+
+require-composer() {
+    have-composer "$1" || {
+        if [[ -f composer.json ]]; then
+            composer install
+        elif [[ :$PATH: != *:"$LOCO_ROOT"/vendor/bin:* ]]; then
+            export PATH=$LOCO_ROOT/vendor/bin:$PATH
+        fi
+        have-composer "$1" || composer require --dev "${@:2}"
+        unhash "$1"
+    }
+}

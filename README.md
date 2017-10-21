@@ -1,8 +1,8 @@
-## .devkit: development automation & dependency management for bash
+## .devkit: development automation & dependency management
 
 If you're working on a project that:
 
-* involves a lot of bash code, development dependencies, and/or specialized commands, and
+* involves a lot of bash code, development-time dependencies, and/or specialized commands, and
 * needs to be shared with people who may contribute to the project, but who
   * **don't** want to have to setup all those dependencies to work on it, and
   * **don't** want to learn project-specific ways to run tests, etc.
@@ -11,9 +11,17 @@ your choices are kind of limited.  You can use a Makefile, maybe, and what... gi
 
 Sure, you can solve the standardization part of the problem with a [Scripts to Rule Them All](https://githubengineering.com/scripts-to-rule-them-all/)-style `script/` directory, but those are kind of a pain to make and not terribly reusable from one project to the next.
 
-`.devkit` solves these problems by giving you an *extensible* automation and development-dependency management framework that you *don't* have to bundle in your project.  Instead, your project's  `script/` directory contains a short [`bootstrap`](script/bootstrap) that fetches `.devkit`, and all of the other `script/` files are just symlinks to `bootstrap`.
+`.devkit` solves these problems by giving you an *extensible* automation and development-dependency management framework that you *don't* have to bundle in your project.
 
-Your project then defines any custom commands and variables in a `.dkrc` file, and gets to use all the tools and modules available in `.devkit`, inlcuding a local version of `basher` for git-based dependency fetching.  Dependencies are installed to a `.deps` directory, with executables in `.deps/bin` -- which is added to `PATH` while your commands run.  You can also add new `script/` types of your own, or just run the extra commands with `.devkit/dk commandname`.
+Instead, your project's  `script/` directory contains a short [`bootstrap`](script/bootstrap) that fetches `.devkit`, and all of the other `script/` files are just symlinks to `bootstrap`.
+
+Your project then defines any custom commands and variables in a `.dkrc` file, and gets to use all the tools and modules available in `.devkit`, inlcuding a local version of `basher` for git-based dependency fetching.
+
+ Dependencies are installed to a `.deps` directory, with executables in `.deps/bin` -- which is added to `PATH` while your commands run.  You can also add new `script/` types of your own, or just run the extra commands with `.devkit/dk commandname`.
+
+### Project Status
+
+At this moment, devkit is still very much in its infancy, and should be considered alpha stability (i.e., expect rapid and likely-breaking changes).  This is also all the documentation there is so far, and there are many modules planned but yet to be added.  For right now, you'll also need to read the [dk source](dk.md) and [loco docs](https://github.com/bashup/loco) to see the full API available to you (beyond what's listed here).
 
 ### Installation
 
@@ -58,13 +66,35 @@ On subsequent runs of `script/test` (or `.devkit/dk test`), none of the cloning 
 
 ### .devkit Modules
 
-Currently, .devkit provides only four modules: `cram`, `entr-watch`, `shell-console`, and `virtualenv`.  You can activate them by adding "`dk use:` *modules...*" to your `.dkrc`, then defining any needed overrides.  (Typically, you override variables by defining them *before* the `dk use:` line(s), and functions by defining them *after*.)
+Currently, .devkit provides the following modules you can `dk use:` in your `.dkrc`:
+
+For any project:
+
+* `entr-watch` -- implement a `watch` command using [entr](http://entrproject.org/)
+
+
+* `cram` -- implement a  `test` command using [cram](https://bitheap.org/cram/)
+* `shell-console` -- implement a `console` command as a bash subshell
+
+For projects using Python:
+
+* `virtualenv` -- functions to create or check for a Python virtualenv
+
+For projects using PHP:
+
+* `composer` -- functions to check for (and optionally possibly require) [composer](https://getcomposer.org)-installed tools
+* `peridot` -- implement a `test` command using [peridot-php](http://peridot-php.github.io/)
+* `psysh-console` -- implement a `console` command using PHP's [psysh](http://psysh.org/) REPL
+
+You can activate any of them by adding "`dk use:` *modules...*" to your `.dkrc`, then defining any needed variable or function overrides.  (Typically, you override variables by defining them *before* the `dk use:` line(s), and functions by defining them *after*.)
 
 Note that these modules are not specially privileged in any way: you are not *required* to use them to obtain the specified functionality.  They are simply defaults and examples.
 
-So, for example, if you don't like how devkit's `dk.entr-watch` module works, you can write your own functions in `.dkrc` or in a package that you load as a development dependency (e.g. with `require mycommand github mygithubaccount/mycommand mycommand; source "$(command -v mycommand)"`).
+So, for example, if you don't like how devkit's `entr-watch` module works, you can write your own functions in `.dkrc` or in a package that you load as a development dependency (e.g. with `require mycommand github mygithubaccount/mycommand mycommand; source "$(command -v mycommand)"`).
 
-You can also place your own devkit modules under a  `.devkit-modules` directory in your project root, and `dk use:` will look for modules there before searching .devkit's bundled modules.  You can also access modules from your `.deps` subdirectories by adding symlinks to them from `.devkit-modules`.  (Just make sure your `.dkrc` installs those dependencies *before* `dk use:`-ing them, if they're not there yet.)
+You can also place your own devkit modules under a  `.devkit-modules` directory in your project root, and `dk use:` will look for modules there before searching .devkit's bundled modules.  You can also access modules from your `.deps` subdirectories by adding symlinks to them from your project's `.devkit-modules`.  (Just make sure your `.dkrc` installs those dependencies *before* `dk use:`-ing them, if they're not there yet.)
+
+### All-Purpose Modules
 
 #### cram
 
@@ -92,6 +122,8 @@ The [shell-console](modules/shell-console) module implements a `dk.console` func
 
 To activate this in your project, add a `dk use: shell-console` line to your `.dkrc`, just like .devkit does.  Running `dk console` or `script/console` will then enter a subshell.
 
+### Modules for Python-Using Projects
+
 #### virtualenv
 
 The [virtualenv](modules/virtualenv) module makes it easy to use a Python virtual environment as part of your project, giving you a `.deps/bin/python`.  Just `dk use: virtualenv` and you can access the `have-virtualenv` and `create-virtualenv` functions.
@@ -107,6 +139,20 @@ create-virtualenv -p python3
 
 (Note: the default `.envrc` will always activate the virtualenv if it exists, so you do not need to do anything special to ensure that it will be used by subsequent runs of `dk` commands.)
 
-### Project Status
+### Modules for PHP-Using Projects
 
-At this moment, devkit is still very much in its infancy, and should be considered alpha stability (i.e., expect rapid and likely-breaking changes).  This is also all the documentation there is so far, and there are many modules planned but yet to be added.  For right now, you'll also need to read the [dk source](dk.md) and [loco docs](https://github.com/bashup/loco) to see the full API available to you.
+#### composer
+
+The [composer](modules/composer) module provides `have-composer` and `require-composer` functions, to check for or install composer-based command-line tools.  `have-composer sometool` returns true if and only if `vendor/bin/sometool` exists under your project root, and `require-composer sometool foo/bar` will `composer require --dev foo/bar` if `vendor/bin/sometool` does not exist and a `composer install` doesn't create it.  (Every argument to `require-composer` after the tool name is passed to `composer require --dev`, so you can specify any other composer options you like.)
+
+#### peridot
+
+The [peridot](modules/peridot) module defines a default `dk.test` function to provide a `script/test` command that runs [peridot-php](http://peridot-php.github.io/) on `specs/*.spec.php` and piping the result through `less -FR`.
+
+To change the files tested, redefine the  `peridot.files` function to emit a different list of files.  To change the pager, redefine `peridot.pager`.   To change the options, set `PERIDOT_OPTIONS` (after the `dk use: peridot`).
+
+#### psysh-console
+
+The [psysh-console](modules/psysh-console) module implements a `dk.console` function to provide a `script/console` command that starts a psysh shell.
+
+
