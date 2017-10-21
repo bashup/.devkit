@@ -5,6 +5,7 @@ dk use: cram entr-watch shell-console
 
 dk.rebuild() {
     require mdsh basher install bashup/mdsh
+    require loco basher install bashup/loco
     REPLY=$(mdsh --compile dk.md) || abort "compile failed w/code $?" $?
     echo "$REPLY" >./dk
     chmod +x ./dk

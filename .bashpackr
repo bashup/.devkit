@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-
-match "dk.*" try "modules/${module#dk.}"
-match "@(loco|realpaths)" with ".deps/bashup/$module/$module" using github "bashup/$module"
