@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 # Use cram and watch for testing, and provide a shell console
-import: cram
-import: entr-watch
-import: shell-console
+import: dk.cram
+import: dk.entr-watch
+import: dk.shell-console
 
 dk.rebuild() {
     require-any bashpackr basher install bashup/bashpackr

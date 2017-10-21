@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 readonly __bpkr_packed=yes
-{ if [[ $OSTYPE != cygwin && -e /dev/fd/0 ]]; then source /dev/fd/0; else source <(cat); fi; } <<'# --- END 2e21c5ee1249bbec1307d95a322b67ced685cedd6fed4296b6f6880ef1fcfcdb ---'
 if [[ ${BASHPACKR_LOADED-} != *\<bashpackr\>* ]]; then BASHPACKR_LOADED+=\<bashpackr\>
-import:()      { is-imported: "$1" || bpkr.__fatal "module '$1' wasn't packed"; }
+import:()      { while (($#)); do is-imported: "$1" || bpkr.__fatal "module '$1' wasn't packed"; shift; done; }
 main:()        { if [[ $0 == ${BASH_SOURCE[1]} ]]; then "$@"; exit $?; fi; }
 pack-with:()   { :; }  # No-op at runtime of packed scripts
 can-import:()  { is-imported: "$1"; }  # can't import what isn't packed
 is-imported:() { [[ ${BASHPACKR_LOADED-} == *"<$1>"* ]]; }
 bpkr.__fatal() { echo "bashpackr: fatal error: " "$1" >&2; exit ${2-70}; }
+bpkr.__embed() { if [[ $OSTYPE != cygwin && $OSTYPE != msys && -e /dev/fd/0 ]]; then source /dev/fd/0; else source <(cat); fi; }
 fi
 if [[ ${BASHPACKR_LOADED-} != *\<realpaths\>* ]]; then BASHPACKR_LOADED+=\<realpaths\>
+bpkr.__embed <<'# --- EOF realpaths ---'
 #!/usr/bin/env bash
 
 realpath.location()  { realpath.follow "$1"; realpath.absolute "$REPLY" ".."; }
@@ -82,9 +83,10 @@ realpath.relative() {
     [[ $1 == "$REPLY" ]] && REPLY=${target%/} || REPLY="$target${1#${REPLY%/}/}"
     REPLY=${REPLY:-.}
 }
-
+# --- EOF realpaths ---
 fi
 if [[ ${BASHPACKR_LOADED-} != *\<loco\>* ]]; then BASHPACKR_LOADED+=\<loco\>
+bpkr.__embed <<'# --- EOF loco ---'
 #!/usr/bin/env bashpackr
 # ex: set ft=bash :
 # LICENSE
@@ -225,9 +227,8 @@ else
     loco_main "$@"
     exit $?
 fi
-
+# --- EOF loco ---
 fi
-# --- END 2e21c5ee1249bbec1307d95a322b67ced685cedd6fed4296b6f6880ef1fcfcdb ---
 dk.bootstrap() { :; }
 dk.setup()     { dk bootstrap; }
 dk.update()    { dk bootstrap; }
@@ -295,9 +296,9 @@ import: realpaths
 
 [[ ${__bpkr_packed-} ]] && import:() {
     is-imported: "$1" && return
-    if [[ -f "$LOCO_ROOT/.devkit/modules/$1" ]]; then
+    if [[ $1 == dk.* && -f "$LOCO_ROOT/.devkit/modules/${1#dk.}" ]]; then
         BASHPACKR_LOADED+="<$1>"
-        source "$LOCO_ROOT/.devkit/modules/$1"
+        source "$LOCO_ROOT/.devkit/modules/${1#dk.}"
     else
         require bashpackr basher install bashup/bashpackr
         source "$BASHER_INSTALL_BIN/bashpackr"

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 : '
-<!-- ex: set syntax=markdown : '; [[ "${BASHPACKR_LOADED-}" ]] || source "$(command -v bashpackr)"; eval "$(sed -ne '/^```shell$/,/^```$/{/^```/d; p}' "$BASH_SOURCE")"; return $? # -->
+<!-- ex: set syntax=markdown : '; ${BASHPACKR_LOADED:+:} source bashpackr; eval "$(sed -ne '/^```shell$/,/^```$/{/^```/d; p;}' "$BASH_SOURCE")"; return $? # -->
 
 # dk - the devkit CLI
 
@@ -124,9 +124,9 @@ If `dk` is being used in packed form, then it's using a stub  `import:` that can
 ```shell
 [[ ${__bpkr_packed-} ]] && import:() {
     is-imported: "$1" && return
-    if [[ -f "$LOCO_ROOT/.devkit/modules/$1" ]]; then
+    if [[ $1 == dk.* && -f "$LOCO_ROOT/.devkit/modules/${1#dk.}" ]]; then
         BASHPACKR_LOADED+="<$1>"
-        source "$LOCO_ROOT/.devkit/modules/$1"
+        source "$LOCO_ROOT/.devkit/modules/${1#dk.}"
     else
         require bashpackr basher install bashup/bashpackr
         source "$BASHER_INSTALL_BIN/bashpackr"
