@@ -208,15 +208,17 @@ ${BASHPACKR_LOADED:+:} source bashpackr || exit
 # IN THE SOFTWARE.
 
 # For documentation, see https://github.com/bashup/loco
-set -euo pipefail; shopt -s extglob
+set -euo pipefail
 
 fn_exists() { declare -F -- "$1"; } >/dev/null
 fn_copy()   { body="$(declare -f $1)"; eval "$2 ${body#$1}"; }
 findup()    { walkup "${1:-$PWD}" reply_if_exists "${@:2}"; }
 
 reply_if_exists() {
-    local IFS=
-    for REPLY in ${1%/}/$2; do [[ -f "$REPLY" ]] && return 0; done
+    local pat dir=$1 IFS= ; shift
+    for pat; do
+        for REPLY in ${dir%/}/$pat; do [[ -f "$REPLY" ]] && return 0; done
+    done
     return 1
 }
 
@@ -250,7 +252,7 @@ _loco_do() {
 }
 
 _loco_findproject() {
-    findup "$LOCO_PWD" "$LOCO_FILE" && LOCO_PROJECT=$REPLY ||
+    findup "$LOCO_PWD" "${LOCO_FILE[@]}" && LOCO_PROJECT=$REPLY ||
         loco_error "Can't find $LOCO_FILE here";
 }
 _loco_preconfig() { true; }
@@ -276,7 +278,7 @@ _loco_config() {
     LOCO_USER_CONFIG="${LOCO_USER_CONFIG-$HOME/$LOCO_RC}"
     [ -f "$LOCO_USER_CONFIG" ] && loco_user_config "$LOCO_USER_CONFIG"
 
-    LOCO_FILE=${LOCO_FILE:-.$LOCO_NAME}
+    [[ ${LOCO_FILE-} ]] || LOCO_FILE=(".$LOCO_NAME")
     LOCO_LOAD="${LOCO_LOAD-source}"
     loco_postconfig "$@"
 }
