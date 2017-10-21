@@ -58,7 +58,7 @@ On subsequent runs of `script/test` (or `.devkit/dk test`), none of the cloning 
 
 ### .devkit Modules
 
-Currently, .devkit provides only four modules: `cram`, `entr-watch`, `shell-console`, and `virtualenv-support`.  You can activate them by adding "`import: dk.`*modulename*" lines to your `.dkrc`, then defining any needed overrides.  (Typically, you override variables by defining them *before* the import, and functions by defining them *after*.)
+Currently, .devkit provides only four modules: `cram`, `entr-watch`, `shell-console`, and `virtualenv-support`.  You can activate them by adding "`dk use:` *modules...*" to your `.dkrc`, then defining any needed overrides.  (Typically, you override variables by defining them *before* the `dk use:` line(s), and functions by defining them *after*.)
 
 Note that these modules are not specially privileged in any way: you are not *required* to use them to obtain the specified functionality.  They are simply defaults and examples.
 
@@ -68,10 +68,10 @@ So, for example, if you don't like how devkit's `dk.entr-watch` module works, yo
 
 The [cram](modules/cram) module defines a default `dk.test` function to provide a `script/test` command that automatically installs a local copy of the [cram functional testing tool](https://bitheap.org/cram/), and runs it on `specs/*.cram.md` files with 4-space indents, colorizing the diff results (if `pygmentize` is available) and piping the result through less.
 
-To use this module (as .devkit itself does),  `import:` it in your `.dkrc`, like so:
+To use this module (as .devkit itself does),  `use:` it in your `.dkrc`, like so:
 
 ```shell
-import: dk.cram
+dk use: cram
 ```
 
 You can then override the module's defaults by defining new functions.
@@ -80,7 +80,7 @@ For example, if you wanted to change the files to be processed by cram, you can 
 
 #### entr-watch
 
-The [entr-watch](modules/entr-watch) module defines a default `dk.watch` command to provide a `script/watch` command that watches for file changes (using [entr](http://entrproject.org/)) and reruns a command (`dk test` by default).  To enable it, `import: dk.entr-watch` in your `.dkrc`, and then optionally define a `watch.files` function to output which files to watch.  (By default, it outputs the current directory contents and any `test.files`.)
+The [entr-watch](modules/entr-watch) module defines a default `dk.watch` command to provide a `script/watch` command that watches for file changes (using [entr](http://entrproject.org/)) and reruns a command (`dk test` by default).  To enable it, `dk use: entr-watch` in your `.dkrc`, and then optionally define a `watch.files` function to output which files to watch.  (By default, it outputs the current directory contents and any `test.files`.)
 
 The watch command requires the `entr` and `tput` commands be installed.  The former is used to watch files for changes, and the latter to compute how many lines of watched command output can be displayed without scrolling.  (The watched command's output is cut off using `head`, and the screen is cleared whenever the watched command is re-run.)
 
@@ -88,16 +88,16 @@ The watch command requires the `entr` and `tput` commands be installed.  The for
 
 The [shell-console](modules/shell-console) module implements a `dk.console` function to provide a `script/console` command that starts a bash subshell with the devkit API and all variables available -- a bit like dropping into a debugger for the `dk` command.  This is particularly handy if you don't have or use `direnv`, as it basically gives you an alternative to typing `script/foo` or `.devkit/dk foo`: within the subshell you can just `dk foo`.
 
-To activate this in your project, add an `import: dk.shell-console` line to your `.dkrc`, just like .devkit does.  Running `dk console` or `script/console` will then enter a subshell.
+To activate this in your project, add a `dk use: shell-console` line to your `.dkrc`, just like .devkit does.  Running `dk console` or `script/console` will then enter a subshell.
 
 #### virtualenv-support
 
-The [virtualenv-support](modules/virtualenv-support) module makes it easy to use a Python virtual environment as part of your project, giving you a `.deps/bin/python`.  Just `import: virtualenv-support` and you can access the `have-virtualenv` and `create-virtualenv` functions.
+The [virtualenv-support](modules/virtualenv-support) module makes it easy to use a Python virtual environment as part of your project, giving you a `.deps/bin/python`.  Just `dk use: virtualenv-support` and you can access the `have-virtualenv` and `create-virtualenv` functions.
 
 `have-virtualenv` returns success if you have an active virtualenv in `.deps`, while `create-virtualenv` creates a virtual environment with the specified options, as long as a virtualenv doesn't already exist.  So, you might do this in your `.dkrc` to create a Python 3 virtualenv:
 
 ```shell
-import: dk.virtualenv-support
+dk use: virtualenv-support
 create-virtualenv -p python3
 ```
 

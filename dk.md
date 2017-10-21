@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 : '
-<!-- ex: set syntax=markdown : '; ${BASHPACKR_LOADED:+:} source bashpackr; eval "$(sed -ne '/^```shell$/,/^```$/{/^```/d; p;}' "$BASH_SOURCE")"; return $? # -->
+<!-- ex: set syntax=markdown : '; eval "$(mdsh -E "$BASH_SOURCE")"; # -->
 
 # dk - the devkit CLI
 
@@ -9,11 +9,11 @@
 * provide skeleton implementations of [Scripts to Rule Them All](https://githubengineering.com/scripts-to-rule-them-all/) commands
 * provide a self-installing, local [basher](https://github/basherpm/basher) instance for installing dependencies
 * provide various convenience functions for detecting and fetching dependencies
-* provide an `import:` shim that allows importing devkit modules even if [bashpackr](https://github.com/bashup/bashpackr) isn't available
+* provide a  `use:` command that loads .devkit modules (by sourcing them at most once)
 
 ## Scripts To Rule Them All
 
-dk provides skeletons for all the "Scripts to Rule Them All" commands, which can be overridden in the project's `.dkrc` file.  The defaults all do nothing, or abort with an error message, but `import:` ing other devkit modules or redefining the functions can change that:
+dk provides skeletons for all the "Scripts to Rule Them All" commands, which can be overridden in the project's `.dkrc` file.  The defaults all do nothing, or abort with an error message, but `dk use:` ing other devkit modules or redefining the functions can change that:
 
 ```shell
 dk.bootstrap() { :; }
@@ -102,36 +102,32 @@ __require() {
 }
 
 ```
-### Symlinks and Path Handling
+### Relative Symlinks
 
 ```shell
 relative-symlink() {
     # Used to create relative links in .deps/bin
     realpath.dirname "$2"; realpath.relative "$1" "$REPLY"; ln -sf "$REPLY" "$2"; return $?
 }
-
-# We've now defined all the functions we need to be able to fetch our own dependencies
-# using the `github` and/or `basher` functions, so we can start importing them now:
-
-import: realpaths
-
 ```
 
-## `import:` shim
+## `dk use:`
 
-If `dk` is being used in packed form, then it's using a stub  `import:` that can't import anything dynamically.  To allow dynamic `import:` of `devkit` modules without installing bashpackr, we define a shim that tries to source `.devkit/modules/$module` first, before falling back to installing bashpackr and using that.
+devkit modules are loaded using the `dk use` command, which loads modules from `.devkit/modules` a maximum of once.
 
 ```shell
-[[ ${__bpkr_packed-} ]] && import:() {
-    is-imported: "$1" && return
-    if [[ $1 == dk.* && -f "$LOCO_ROOT/.devkit/modules/${1#dk.}" ]]; then
-        BASHPACKR_LOADED+="<$1>"
-        source "$LOCO_ROOT/.devkit/modules/${1#dk.}"
-    else
-        require bashpackr basher install bashup/bashpackr
-        source "$BASHER_INSTALL_BIN/bashpackr"
-        import: "$1"
-    fi
+dk.use:() {
+    while (($#)); do
+        if [[ ${DEVKIT_MODULES-} == *"<$1>"* ]]; then
+            continue   # already loaded
+        elif [[ -f "$LOCO_ROOT/.devkit/modules/$1" ]]; then
+            DEVKIT_MODULES+="<$1>"
+            source "$LOCO_ROOT/.devkit/modules/$1"
+        else
+            abort "Unknown module $1; maybe you need to update .devkit?" 69
+        fi
+        shift
+    done
 }
 ```
 
@@ -140,8 +136,6 @@ If `dk` is being used in packed form, then it's using a stub  `import:` that can
 We override loco's configuration process in a few ways: first, our command name/function prefix is always `dk`, and we always use a `.dkrc` file as the project file.  When loading the project file, we source the adjacent `.envrc` first, and also make sure there's a `dk` in the project's auxiliary bin dir.
 
 ```shell
-import: loco
-
 loco_preconfig() {
     LOCO_SCRIPT=$BASH_SOURCE
     LOCO_COMMAND=dk
@@ -160,9 +154,9 @@ loco_loadproject() {
         relative-symlink .devkit/dk "$BASHER_INSTALL_BIN/dk"
     }
 
+    dk() { loco_do "$@"; }  # ensure `dk use:` will work in .dkrc
     $LOCO_LOAD "$1"
 }
-
 
 ```
 
@@ -173,9 +167,8 @@ loco_site_config() { :; }
 loco_user_config() { :; }
 ```
 
-Having configured everything we need, we can reuse loco's "main" function instead of defining our own.  (And because this is a shelldown file, we specify a sed command for bashpackr to pack our source with.)
+Having configured everything we need, we can simply include loco's source code to do the rest (it also includes our `realpaths` dependency:
 
-```shell
-main: loco_main "$@"
-pack-with: sed -ne '/^```shell$/,/^```$/{/^```/d; p}' "$BASH_SOURCE"
+```shell mdsh
+cat "$(command -v loco)"
 ```

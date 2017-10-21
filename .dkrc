@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 
 # Use cram and watch for testing, and provide a shell console
-import: dk.cram
-import: dk.entr-watch
-import: dk.shell-console
+dk use: cram entr-watch shell-console
 
 dk.rebuild() {
-    require-any bashpackr basher install bashup/bashpackr
-    bashpackr --pack dk.md dk
+    require mdsh basher install bashup/mdsh
+    REPLY=$(mdsh --compile dk.md) || abort "compile failed w/code $?" $?
+    echo "$REPLY" >./dk
+    chmod +x ./dk
 }
 
 # Auto-build dk and re-exec it if needed
 if [[ ! -x dk || dk.md -nt dk ]]; then
-    dk.rebuild; touch dk
+    dk.rebuild
     exec "./dk" "${LOCO_ARGS[@]}"
 fi
