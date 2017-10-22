@@ -17,7 +17,28 @@ Instead, your project's  `script/` directory contains a short [`bootstrap`](scri
 
 Your project then defines any custom commands and variables in a `.dkrc` file, and gets to use all the tools and modules available in `.devkit`, inlcuding a local version of `basher` for git-based dependency fetching.
 
- Dependencies are installed to a `.deps` directory, with executables in `.deps/bin` -- which is added to `PATH` while your commands run.  You can also add new `script/` types of your own, or just run the extra commands with `.devkit/dk commandname`.
+Dependencies are installed to a `.deps` directory, with executables in `.deps/bin` -- which is added to `PATH` while your commands run.  You can also add new `script/` types of your own, or just run the extra commands with `.devkit/dk commandname`.
+
+**Contents**
+
+<!-- toc -->
+
+- [Project Status](#project-status)
+- [Installation](#installation)
+- [Configuration and Extension](#configuration-and-extension)
+- [.devkit Modules](#devkit-modules)
+- [All-Purpose Modules](#all-purpose-modules)
+  * [cram](#cram)
+  * [entr-watch](#entr-watch)
+  * [shell-console](#shell-console)
+- [Modules for Python-Using Projects](#modules-for-python-using-projects)
+  * [virtualenv](#virtualenv)
+- [Modules for PHP-Using Projects](#modules-for-php-using-projects)
+  * [composer](#composer)
+  * [peridot](#peridot)
+  * [psysh-console](#psysh-console)
+
+<!-- tocstop -->
 
 ### Project Status
 
