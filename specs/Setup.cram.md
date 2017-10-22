@@ -67,7 +67,7 @@ With git (dirty):
 
     $ git commit -m "Added devkit"
     [master (root-commit) *] Added devkit (glob)
-     12 files changed, 74 insertions(+)
+     12 files changed, 77 insertions(+)
      create mode 100644 .dkrc
      create mode 100644 .envrc
      create mode 100644 .gitignore

@@ -7,9 +7,12 @@
 
 # Available modules (uncomment to use):
 
-# dk use: cram                  # run tests using the "cram" functional test tool
-# dk use: entr-watch            # watch files and re-run tests or other commands
-# dk use: shell-console         # make the "console" command enter a subshell
-# dk use: virtualenv            # enable creation and use of Python virtualenvs
+# dk use: cram              # run tests using the "cram" functional test tool
+# dk use: entr-watch        # watch files and re-run tests or other commands
+# dk use: shell-console     # make the "console" command enter a subshell
+# dk use: virtualenv        # enable creation and use of Python virtualenvs
+# dk use: composer          # utilities for accessing composer-based dev tools
+# dk use: peridot           # run tests using peridot-php
+# dk use: psysh-console     # make the "console" command run the Psysh PHP REPL
 
 # Define overrides, new commands, functions, etc. here:
