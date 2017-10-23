@@ -4,8 +4,8 @@
 dk use: cram entr-watch shell-console
 
 dk.rebuild() {
-    require mdsh basher install bashup/mdsh
-    require loco basher install bashup/loco
+    require mdsh github bashup/mdsh master bin/mdsh
+    require loco github bashup/loco master bin/loco
     REPLY=$(mdsh --compile dk.md) || abort "compile failed w/code $?" $?
     echo "$REPLY" >./dk
     chmod +x ./dk

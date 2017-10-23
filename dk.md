@@ -11,6 +11,22 @@
 * provide various convenience functions for detecting and fetching dependencies
 * provide a  `use:` command that loads .devkit modules (by sourcing them at most once)
 
+### Contents
+
+<!-- toc -->
+
+- [Scripts To Rule Them All](#scripts-to-rule-them-all)
+- [Dependency Management Functions](#dependency-management-functions)
+  * [basher](#basher)
+  * [github](#github)
+  * [linkbin and catbin](#linkbin-and-catbin)
+  * [have, require, have-any, require-any](#have-require-have-any-require-any)
+  * [Relative Symlinks](#relative-symlinks)
+- [`dk use:`](#dk-use)
+- [loco configuration](#loco-configuration)
+
+<!-- tocstop -->
+
 ## Scripts To Rule Them All
 
 dk provides skeletons for all the "Scripts to Rule Them All" commands, which can be overridden in the project's `.dkrc` file.  The defaults all do nothing, or abort with an error message, but `dk use:` ing other devkit modules or redefining the functions can change that:
