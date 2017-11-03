@@ -4,7 +4,7 @@ dk.watch() {
     require-any entr abort "Please install entr (http://entrproject.org/) to watch files" 69
     require-any tput
     (($#)) || set -- dk test # default to watching `dk test`
-    if watch.files | entr-watch "$@"; [[ (($?==2)) ]]; then
+    if watch.files | entr-watch "$@"; (($?==2)); then
         exec dk watch "$@"
     fi
 }
