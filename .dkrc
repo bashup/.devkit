@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Use cram and watch for testing, and provide a shell console
-dk use: cram entr-watch shell-console
+dk use: cram entr-watch shell-console bash32
 
 dk.rebuild() {
     require mdsh github bashup/mdsh master bin/mdsh

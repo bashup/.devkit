@@ -3,7 +3,7 @@
 [[ -f .cramrc ]] || export CRAM="${CRAM-"--indent=4 --shell=bash --verbose"}"
 
 cram.files() { ls specs/*.cram.md; }
-cram.pager() { less -FR; }
+cram.pager() { less -FRX; }
 test.files() { cram.files; }
 
 dk.test() { dk cram; }

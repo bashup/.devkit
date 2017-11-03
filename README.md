@@ -37,6 +37,8 @@ Dependencies are installed to a `.deps` directory, with executables in `.deps/bi
   * [composer](#composer)
   * [peridot](#peridot)
   * [psysh-console](#psysh-console)
+- [Modules for Projects Using bash 3.2](#modules-for-projects-using-bash-32)
+  * [bash32](#bash32)
 
 <!-- tocstop -->
 
@@ -107,6 +109,10 @@ For projects using PHP:
 * `peridot` -- implement a `test` command using [peridot-php](http://peridot-php.github.io/)
 * `psysh-console` -- implement a `console` command using PHP's [psysh](http://psysh.org/) REPL
 
+For projects using bash 3.2
+
+* `bash32` -- add a `dk bash32` command that can run other devkit commands in [a docker container with bash 3.2](https://github.com/bashup/bash-3.2).
+
 You can activate any of them by adding "`dk use:` *modules...*" to your `.dkrc`, then defining any needed variable or function overrides.  (Typically, you override variables by defining them *before* the `dk use:` line(s), and functions by defining them *after*.)
 
 Note that these modules are not specially privileged in any way: you are not *required* to use them to obtain the specified functionality.  They are simply defaults and examples.
@@ -176,4 +182,15 @@ To change the files tested, redefine the  `peridot.files` function to emit a dif
 
 The [psysh-console](modules/psysh-console) module implements a `dk.console` function to provide a `script/console` command that starts a psysh shell.
 
+### Modules for Projects Using bash 3.2
 
+#### bash32
+
+The [bash32](modules/bash32) module adds a `bash32` command you can use to run other commands in a docker container with bash 3.2.  Bashup projects use this to test compatibility with bash 3.2 and busybox.  You must enable the module by including `bash32` in your `.dkrc`'s `dk use:`, and the command will only work if you have access to docker with local volume support (to map the project directory into the container).
+
+Running `dk bash32 command ...`  runs `dk command ...` inside the docker container, so if you have the relevant devkit modules enabled, you can run `test`,`watch`, and even `console`, inside the container.  The following variables and functions control the operation of the container:
+
+* `$BASH32_IMAGE` -- Image to run: defaults to [bashitup/bash-3.2](https://github.com/bashup/bash-3.2)
+* `$BASH32_DOCKER_OPTS` -- Additional options to run the container with; defaults to `-it` for an interactive run.  (`--rm`, `-e TERM`, volume mappings and the command line are automatically generated, so you do not need to include them here.)
+* `bash32.prepare-image` -- function that gets called before launching the container.  No-op by default; can alter the `$BASH32_IMAGE` and `$BASH32_DOCKER_OPTS`.
+* `bash32.bootstrap` -- function that gets called *inside* the container before running the requested command.  No-op by default, can be used to install dependencies or override other `.dkrc` variables and functions to provide container-specific behavior.

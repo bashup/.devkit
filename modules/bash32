@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+export BASH32_IMAGE=bashitup/bash-3.2
+export BASH32_DOCKER_OPTS="-it"
+
+bash32.prepare-image() {
+    : # override to e.g. build a custom image or change BASH32_IMAGE/DOCKER_OPTS
+}
+
+bash32.bootstrap() {
+    : # Redefine this to do any in-container bootstrapping, e.g. to install other packages
+}
+
+dk.bash32() {
+    bash32.prepare-image
+    printf -v cmd "%q " "$@"
+    realpath.resolved "$LOCO_ROOT/.devkit"
+    docker run --rm -e TERM \
+        -v "$LOCO_ROOT:/workdir" \
+        -v "$REPLY:/workdir/.devkit" \
+        $BASH32_DOCKER_OPTS "$BASH32_IMAGE" \
+        -c '.devkit/dk bash32-bootstrap '"$cmd"
+}
+
+dk.bash32-bootstrap() { bash32.bootstrap && dk "$@"; }

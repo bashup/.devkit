@@ -14,5 +14,6 @@
 # dk use: composer          # utilities for accessing composer-based dev tools
 # dk use: peridot           # run tests using peridot-php
 # dk use: psysh-console     # make the "console" command run the Psysh PHP REPL
+# dk use: bash32            # enable doing tests/console/etc. in bash3.2 w/docker
 
 # Define overrides, new commands, functions, etc. here:
