@@ -25,10 +25,10 @@ dk.cram() {
 
 install-cram() {
     require-any python
-    github brodie/cram
+    github pjeby/cram indent-fix
     catbin cram <(
         echo '#!/usr/bin/env bash'
-        echo 'PYTHONPATH=$BASHER_PACKAGES_PATH/brodie/cram python -m cram "$@"'
+        echo 'PYTHONPATH=$BASHER_PACKAGES_PATH/pjeby/cram python -m cram "$@"'
     )
 }
 
