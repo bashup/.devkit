@@ -194,3 +194,5 @@ Running `dk bash32 command ...`  runs `dk command ...` inside the docker contain
 * `$BASH32_DOCKER_OPTS` -- Additional options to run the container with; defaults to `-it` for an interactive run.  (`--rm`, `-e TERM`, volume mappings and the command line are automatically generated, so you do not need to include them here.)
 * `bash32.prepare-image` -- function that gets called before launching the container.  No-op by default; can alter the `$BASH32_IMAGE` and `$BASH32_DOCKER_OPTS`.
 * `bash32.bootstrap` -- function that gets called *inside* the container before running the requested command.  No-op by default, can be used to install dependencies or override other `.dkrc` variables and functions to provide container-specific behavior.
+
+Note: the docker container will use `.deps/.bash32` as its `/workdir/.deps`, so that its installed dependencies can be platform-specific.  Running `clean` inside the container will clean only these dependencies, while running `clean` outside the container will wipe both sets of dependencies.

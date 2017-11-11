@@ -18,6 +18,7 @@ dk.bash32() {
     docker run --rm -e TERM \
         -v "$LOCO_ROOT:/workdir" \
         -v "$REPLY:/workdir/.devkit" \
+        -v "$LOCO_ROOT/.deps/.bash32:/workdir/.deps" \
         $BASH32_DOCKER_OPTS "$BASH32_IMAGE" \
         -c '.devkit/dk bash32-bootstrap '"$cmd"
 }
