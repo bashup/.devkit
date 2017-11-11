@@ -10,8 +10,7 @@ dk.watch() {
 }
 
 watch.files() {
-    fn_exists test.files && test.files
-    ls
+    { fn_exists test.files && test.files; ls; } | grep -v '\.md\.err$'
 }
 
 entr-watch() {
