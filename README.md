@@ -2,12 +2,13 @@
 
 If you're working on a project that:
 
-* involves a lot of bash code, development-time dependencies, and/or specialized commands, and
+* involves a lot of bash code, development-time dependencies, and/or specialized commands, OR
+* uses tools built in multiple languages (e.g. node, go, Python, etc.), AND
 * needs to be shared with people who may contribute to the project, but who
   * **don't** want to have to setup all those dependencies to work on it, and
   * **don't** want to learn project-specific ways to run tests, etc.
 
-your choices are kind of limited.  You can use a Makefile, maybe, and what... git submodules?  Vendoring with git subtrees?  One of the many bash package managers that don't really get along with each other, and which your collaborators would have to install on their mahcines?
+your choices are kind of limited.  You can use a Makefile, maybe, and what... git submodules?  Vendoring with git subtrees?  One of the many bash package managers that don't really get along with each other, and which your collaborators would have to install on their mahcines?  An entire Vagrant VM or collection of docker images?
 
 Sure, you can solve the standardization part of the problem with a [Scripts to Rule Them All](https://githubengineering.com/scripts-to-rule-them-all/)-style `script/` directory, but those are kind of a pain to make and not terribly reusable from one project to the next.
 
