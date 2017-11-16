@@ -83,6 +83,14 @@ loco_preconfig() {
     LOCO_FILE=.dkrc
 }
 
+loco_findroot() {
+    local proj_dk this_dk
+    _loco_findroot "$@"
+    realpath.canonical "$LOCO_ROOT/.devkit/dk"; proj_dk=$REPLY
+    realpath.canonical "$BASH_SOURCE"; this_dk=$REPLY
+    [[ "$proj_dk" == "$this_dk" || ! -x "$proj_dk" ]] || exec "$proj_dk" "$@";
+}
+
 loco_loadproject() {
     cd "$LOCO_ROOT"
     [[ -f .envrc ]] && source .envrc

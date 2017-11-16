@@ -156,13 +156,21 @@ dk.use:() {
 
 ## loco configuration
 
-We override loco's configuration process in a few ways: first, our command name/function prefix is always `dk`, and we always use a `.dkrc` file as the project file.  When loading the project file, we source the adjacent `.envrc` first, and also make sure there's a `dk` in the project's auxiliary bin dir.
+We override loco's configuration process in a few ways: first, our command name/function prefix is always `dk`, and we always use a `.dkrc` file as the project file.  When loading the project file, we source the adjacent `.envrc` first, and also make sure there's a `dk` in the project's auxiliary bin dir.  We also verify whether the executing copy of dk is the *project's* local copy, and exec that instead of ourselves if not.
 
 ```shell
 loco_preconfig() {
     LOCO_SCRIPT=$BASH_SOURCE
     LOCO_COMMAND=dk
     LOCO_FILE=.dkrc
+}
+
+loco_findroot() {
+    local proj_dk this_dk
+    _loco_findroot "$@"
+    realpath.canonical "$LOCO_ROOT/.devkit/dk"; proj_dk=$REPLY
+    realpath.canonical "$BASH_SOURCE"; this_dk=$REPLY
+    [[ "$proj_dk" == "$this_dk" || ! -x "$proj_dk" ]] || exec "$proj_dk" "$@";
 }
 
 loco_loadproject() {

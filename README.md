@@ -60,6 +60,8 @@ $ git commit -m "Added devkit"
 
 The `.devkit/setup` command will create and `git add` a `script/` directory for you, with unchanging bootstrap code.  It also adds `.deps` and `.devkit` to your `.gitignore`, and creates a default `.envrc` and `.dkrc` if you don't already have them.
 
+In addition to installing the project tools locally, you can install a global copy of the [`dk` binary](dk) as a way to run commands that don't have `script/` counterparts, without needing to explicitly type `.devkit/dk` to run the local copy.   (A global `dk` will `exec` the local copy of `dk` if one is present and not the same file as the global `dk`.)  If you use [basher](https://github.com/basherpm/basher), you can `basher install bashup/.devkit` to do the global install.
+
 ### Configuration and Extension
 
 The `.envrc` is a bash file that configures `PATH`, `MANPATH`, and various basher-specific variables to install dependencies under `.deps`, with commands and manpages directed to `.deps/bin` and `.deps/man`.  (It also adds any project-local composer or node.js local tools to the `PATH`.)  It's automatically sourced when running `script/` commands or a `.devkit/dk` subcommand.
