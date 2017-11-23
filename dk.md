@@ -36,7 +36,7 @@ dk.bootstrap() { :; }
 dk.setup()     { dk bootstrap; }
 dk.update()    { dk bootstrap; }
 dk.cibuild()   { dk test; }
-dk.clean()     { [[ "$BASHER_PREFIX" == "$PWD/.deps" ]] && rm -rf "$BASHER_PREFIX"; hash -r; }
+dk.clean()     { [[ "$BASHER_PREFIX" == "$PWD/.deps" ]] && rm -rf "$BASHER_PREFIX"; hash -r; linkbin .devkit/dk; }
 
 dk.server()  { undefined-command server; }
 dk.test()    { undefined-command test; }
@@ -180,15 +180,11 @@ loco_loadproject() {
     [[ ! "${BASHER_INSTALL_BIN-}" || ${BASHER_INSTALL_BIN#$PWD} == "$BASHER_INSTALL_BIN" ]] &&
         abort "Your .envrc must define a *local* installation of basher!" 78 # EX_CONFIG
 
-    have dk || {
-        mkdir -p "$BASHER_INSTALL_BIN"
-        relative-symlink .devkit/dk "$BASHER_INSTALL_BIN/dk"
-    }
+    require dk linkbin .devkit/dk   # make sure there's a local dk
 
     dk() { loco_do "$@"; }  # ensure `dk use:` will work in .dkrc
     $LOCO_LOAD "$1"
 }
-
 ```
 
 We also disable sitewide and user config files, because using them goes against devkit's goal of *self-containment*: it shouldn't be necessary for a user to change or install global things to work on your project.
