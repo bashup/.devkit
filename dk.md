@@ -184,8 +184,6 @@ loco_loadproject() {
         abort "Your .envrc must define a *local* installation of basher!" 78 # EX_CONFIG
 
     require dk linkbin .devkit/dk   # make sure there's a local dk
-
-    dk() { loco_do "$@"; }  # ensure `dk use:` will work in .dkrc
     $LOCO_LOAD "$1"
 }
 ```
