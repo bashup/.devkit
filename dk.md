@@ -32,6 +32,7 @@
 dk provides skeletons for all the "Scripts to Rule Them All" commands, which can be overridden in the project's `.dkrc` file.  The defaults all do nothing, or abort with an error message, but `dk use:` ing other devkit modules or redefining the functions can change that:
 
 ```shell
+#!/usr/bin/env bash
 dk.bootstrap() { :; }
 dk.setup()     { dk bootstrap; }
 dk.update()    { dk bootstrap; }

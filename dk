@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 dk.bootstrap() { :; }
 dk.setup()     { dk bootstrap; }
 dk.update()    { dk bootstrap; }
