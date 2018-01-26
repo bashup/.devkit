@@ -7,6 +7,7 @@ dk.watch() {
     if watch.files | entr-watch "$@"; (($?==2)); then
         exec dk watch "$@"
     fi
+    stty echo
 }
 
 watch.files() {
