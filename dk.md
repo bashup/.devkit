@@ -2,6 +2,11 @@
 : '
 <!-- ex: set syntax=markdown : '; eval "$(mdsh -E "$BASH_SOURCE")"; # -->
 
+```shell mdsh
+@module dk.md
+@comment LICENSE
+```
+
 # dk - the devkit CLI
 
 `dk` is a specialized version of [loco](https://github.com/bashup/loco), that uses a `.dkrc` file to designate the project directory, define commands, etc.  It extends loco to:
@@ -32,7 +37,6 @@
 dk provides skeletons for all the "Scripts to Rule Them All" commands, which can be overridden in the project's `.dkrc` file.  The defaults all do nothing, or abort with an error message, but `dk use:` ing other devkit modules or redefining the functions can change that:
 
 ```shell
-#!/usr/bin/env bash
 dk.bootstrap() { :; }
 dk.setup()     { dk bootstrap; }
 dk.update()    { dk bootstrap; }
@@ -196,8 +200,9 @@ loco_site_config() { :; }
 loco_user_config() { :; }
 ```
 
-Having configured everything we need, we can simply include loco's source code to do the rest (it also includes our `realpaths` dependency:
+Having configured everything we need, we can simply include loco's source code to do the rest (it also includes our `realpaths` dependency):
 
 ```shell mdsh
-cat "$(command -v loco)"
+@import bashup/loco mdsh-source "$BASHER_PACKAGES_PATH/bashup/loco/loco.md"
+@main loco_main
 ```
