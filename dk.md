@@ -4,8 +4,10 @@
 
 ```shell mdsh
 @module dk.md
+@main loco_main   # use loco's main as our main
+
 @import pjeby/license @comment LICENSE
-@main loco_main
+@import bashup/loco   mdsh-source "$BASHER_PACKAGES_PATH/bashup/loco/loco.md"
 ```
 
 # dk - the devkit CLI
@@ -199,10 +201,4 @@ We also disable sitewide and user config files, because using them goes against 
 ```shell
 loco_site_config() { :; }
 loco_user_config() { :; }
-```
-
-Having configured everything we need, we can simply include loco's source code to do the rest (it also includes our `realpaths` dependency):
-
-```shell mdsh
-@import bashup/loco mdsh-source "$BASHER_PACKAGES_PATH/bashup/loco/loco.md"
 ```

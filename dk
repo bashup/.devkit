@@ -19,114 +19,6 @@
 # COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-dk.bootstrap() { :; }
-dk.setup()     { dk bootstrap; }
-dk.update()    { dk bootstrap; }
-dk.cibuild()   { dk test; }
-dk.clean()     {
-    [[ "$BASHER_PREFIX" == "$PWD/.deps" ]] && rm -rf "$BASHER_PREFIX"
-    hash -r; linkbin .devkit/dk
-}
-
-dk.server()  { undefined-command server; }
-dk.test()    { undefined-command test; }
-dk.console() { undefined-command console; }
-
-undefined-command() {
-    abort "This project does not have a $1 command defined." 69   # EX_UNAVAILABLE
-}
-abort()    { log "$1"; exit $2; }
-log()      { echo "$1" >&2; }
-basher() {
-    require basher github basherpm/basher master bin/basher
-    "$BASHER_INSTALL_BIN/basher" "$@"
-}
-
-github() {
-    [[ -d "$BASHER_PACKAGES_PATH/$1/.git" ]] && return
-    mkdir -p "$BASHER_PACKAGES_PATH/$1"
-    git clone -q --depth=1 -b "${2:-master}" "https://github.com/$1" "$BASHER_PACKAGES_PATH/$1"
-    local bin; for bin in "${@:3}"; do linkbin "$BASHER_PACKAGES_PATH/$1/$bin"; done
-}
-linkbin() {
-    mkdir -p "$BASHER_INSTALL_BIN"
-    relative-symlink "$1" "$BASHER_INSTALL_BIN/${2:-${1##*/}}"
-    unhash "${2:-${1##*/}}"
-}
-
-catbin() {
-    cat "${@:2}" >"$BASHER_INSTALL_BIN/$1"
-    chmod +x "$BASHER_INSTALL_BIN/$1"
-    unhash "$1"
-}
-
-unhash() { hash -d "$@" || true; } 2>/dev/null
-
-have()     { [[ -x "$BASHER_INSTALL_BIN/$1" ]]; }
-have-any() { unhash "$@"; command -v "$@"; } >/dev/null 2>&1
-
-require() {
-    have "$1" || __require "$1" "$1 must be installed to $BASHER_INSTALL_BIN/" "${@:2}"
-}
-
-require-any() {
-    have-any "$1" || __require "$1" "Please install $1 to perform this operation" "${@:2}"
-}
-
-__require() {
-    if (($#>2)); then "${@:3}"; unhash "$1"; else abort "$2" 69; fi
-}
-
-relative-symlink() {
-    # Used to create relative links in .deps/bin
-    realpath.dirname "$2"; realpath.relative "$1" "$REPLY"; ln -sf "$REPLY" "$2"; return $?
-}
-__find_dk_module() {
-    local p
-    for p in .devkit-modules .devkit/modules; do
-        p=$LOCO_ROOT/$p/$1
-        if [[ -f $p ]]; then REPLY=$p; return; fi
-    done
-    return 1
-}
-
-dk.use:() {
-    while (($#)); do local m=$1; shift
-        if [[ ${DEVKIT_MODULES-} == *"<$m>"* ]]; then
-            : # already loaded
-        elif __find_dk_module "$m"; then
-            DEVKIT_MODULES+="<$m>"; source "$REPLY"
-        else
-            abort "Unknown module '$m'; maybe you need to update .devkit or install a dependency?" 69
-        fi
-    done
-}
-loco_preconfig() {
-    LOCO_SCRIPT=$BASH_SOURCE
-    LOCO_COMMAND=dk
-    LOCO_FILE=.dkrc
-}
-
-loco_findroot() {
-    local proj_dk this_dk
-    _loco_findroot "$@"
-    realpath.canonical "$LOCO_ROOT/.devkit/dk"; proj_dk=$REPLY
-    realpath.canonical "$BASH_SOURCE"; this_dk=$REPLY
-    [[ "$proj_dk" == "$this_dk" || ! -x "$proj_dk" ]] || exec "$proj_dk" "$@";
-}
-
-loco_loadproject() {
-    cd "$LOCO_ROOT"
-    [[ -f .envrc ]] && source .envrc
-
-    [[ ! "${BASHER_INSTALL_BIN-}" || ${BASHER_INSTALL_BIN#$PWD} == "$BASHER_INSTALL_BIN" ]] &&
-        abort "Your .envrc must define a *local* installation of basher!" 78 # EX_CONFIG
-
-    require dk linkbin .devkit/dk   # make sure there's a local dk
-    $LOCO_LOAD "$1"
-}
-loco_site_config() { :; }
-loco_user_config() { :; }
 #!/usr/bin/env bash
 
 realpath.location() { realpath.follow "$1"; realpath.absolute "$REPLY" ".."; }
@@ -271,4 +163,112 @@ done
 for lv in ${!LOCO_@}; do unset $lv; done
 
 LOCO_SCRIPT=$0
+dk.bootstrap() { :; }
+dk.setup()     { dk bootstrap; }
+dk.update()    { dk bootstrap; }
+dk.cibuild()   { dk test; }
+dk.clean()     {
+    [[ "$BASHER_PREFIX" == "$PWD/.deps" ]] && rm -rf "$BASHER_PREFIX"
+    hash -r; linkbin .devkit/dk
+}
+
+dk.server()  { undefined-command server; }
+dk.test()    { undefined-command test; }
+dk.console() { undefined-command console; }
+
+undefined-command() {
+    abort "This project does not have a $1 command defined." 69   # EX_UNAVAILABLE
+}
+abort()    { log "$1"; exit $2; }
+log()      { echo "$1" >&2; }
+basher() {
+    require basher github basherpm/basher master bin/basher
+    "$BASHER_INSTALL_BIN/basher" "$@"
+}
+
+github() {
+    [[ -d "$BASHER_PACKAGES_PATH/$1/.git" ]] && return
+    mkdir -p "$BASHER_PACKAGES_PATH/$1"
+    git clone -q --depth=1 -b "${2:-master}" "https://github.com/$1" "$BASHER_PACKAGES_PATH/$1"
+    local bin; for bin in "${@:3}"; do linkbin "$BASHER_PACKAGES_PATH/$1/$bin"; done
+}
+linkbin() {
+    mkdir -p "$BASHER_INSTALL_BIN"
+    relative-symlink "$1" "$BASHER_INSTALL_BIN/${2:-${1##*/}}"
+    unhash "${2:-${1##*/}}"
+}
+
+catbin() {
+    cat "${@:2}" >"$BASHER_INSTALL_BIN/$1"
+    chmod +x "$BASHER_INSTALL_BIN/$1"
+    unhash "$1"
+}
+
+unhash() { hash -d "$@" || true; } 2>/dev/null
+
+have()     { [[ -x "$BASHER_INSTALL_BIN/$1" ]]; }
+have-any() { unhash "$@"; command -v "$@"; } >/dev/null 2>&1
+
+require() {
+    have "$1" || __require "$1" "$1 must be installed to $BASHER_INSTALL_BIN/" "${@:2}"
+}
+
+require-any() {
+    have-any "$1" || __require "$1" "Please install $1 to perform this operation" "${@:2}"
+}
+
+__require() {
+    if (($#>2)); then "${@:3}"; unhash "$1"; else abort "$2" 69; fi
+}
+
+relative-symlink() {
+    # Used to create relative links in .deps/bin
+    realpath.dirname "$2"; realpath.relative "$1" "$REPLY"; ln -sf "$REPLY" "$2"; return $?
+}
+__find_dk_module() {
+    local p
+    for p in .devkit-modules .devkit/modules; do
+        p=$LOCO_ROOT/$p/$1
+        if [[ -f $p ]]; then REPLY=$p; return; fi
+    done
+    return 1
+}
+
+dk.use:() {
+    while (($#)); do local m=$1; shift
+        if [[ ${DEVKIT_MODULES-} == *"<$m>"* ]]; then
+            : # already loaded
+        elif __find_dk_module "$m"; then
+            DEVKIT_MODULES+="<$m>"; source "$REPLY"
+        else
+            abort "Unknown module '$m'; maybe you need to update .devkit or install a dependency?" 69
+        fi
+    done
+}
+loco_preconfig() {
+    LOCO_SCRIPT=$BASH_SOURCE
+    LOCO_COMMAND=dk
+    LOCO_FILE=.dkrc
+}
+
+loco_findroot() {
+    local proj_dk this_dk
+    _loco_findroot "$@"
+    realpath.canonical "$LOCO_ROOT/.devkit/dk"; proj_dk=$REPLY
+    realpath.canonical "$BASH_SOURCE"; this_dk=$REPLY
+    [[ "$proj_dk" == "$this_dk" || ! -x "$proj_dk" ]] || exec "$proj_dk" "$@";
+}
+
+loco_loadproject() {
+    cd "$LOCO_ROOT"
+    [[ -f .envrc ]] && source .envrc
+
+    [[ ! "${BASHER_INSTALL_BIN-}" || ${BASHER_INSTALL_BIN#$PWD} == "$BASHER_INSTALL_BIN" ]] &&
+        abort "Your .envrc must define a *local* installation of basher!" 78 # EX_CONFIG
+
+    require dk linkbin .devkit/dk   # make sure there's a local dk
+    $LOCO_LOAD "$1"
+}
+loco_site_config() { :; }
+loco_user_config() { :; }
 if [[ $0 == "$BASH_SOURCE" ]]; then loco_main "$@"; fi
