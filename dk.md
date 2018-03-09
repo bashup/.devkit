@@ -4,7 +4,8 @@
 
 ```shell mdsh
 @module dk.md
-@comment LICENSE
+@import pjeby/license @comment LICENSE
+@main loco_main
 ```
 
 # dk - the devkit CLI
@@ -204,5 +205,4 @@ Having configured everything we need, we can simply include loco's source code t
 
 ```shell mdsh
 @import bashup/loco mdsh-source "$BASHER_PACKAGES_PATH/bashup/loco/loco.md"
-@main loco_main
 ```
