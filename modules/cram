@@ -4,6 +4,8 @@
 
 cram.files() { ls specs/*.cram.md; }
 cram.pager() { less -FRX; }
+if [[ ${TRAVIS-} == true ]] ; then cram.pager() { cat; } fi
+
 test.files() { cram.files; }
 
 dk.test() { dk cram; }
