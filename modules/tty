@@ -4,17 +4,15 @@ jq() { if pager; then command jq -C "$@" | $REPLY; else command jq "$@"; fi; }
 
 pager() { tty-tool PAGER less -FRX; }
 
-tty_prefix=DEVKIT_
-
 tty-tool() {
-	isatty || return; set -- "${tty_prefix}$@"; REPLY=${!1-};
+	isatty || return; set -- "${tty_prefix-DEVKIT_}$@"; REPLY=${!1-};
 	if [[ ! ${!1+_} ]] && command -v "$2" >/dev/null; then
 		event quote "${@:2}"
 	else [[ $REPLY ]];
 	fi
 }
 
-isatty() { local t=${tty_prefix}ISATTY; [[ ${!t-} || -t 1 ]]; }
+isatty() { local t=${tty_prefix-DEVKIT_}ISATTY; [[ ${!t-} || -t 1 ]]; }
 
 tty() {
 	local pipe=
@@ -22,6 +20,6 @@ tty() {
 		! $1 || pipe="| $REPLY$pipe"; shift
 	done
 	event quote "${@:2}"
-	! isatty || REPLY="${tty_prefix}ISATTY=1 $REPLY"
+	! isatty || REPLY="${tty_prefix-DEVKIT_}ISATTY=1 $REPLY"
 	eval "$REPLY $pipe"
 }
