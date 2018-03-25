@@ -17,6 +17,9 @@ dk.cram() {
     dk bootstrap;
     require cram install-cram
     IFS=$'\n' eval 'local cramfiles=($(run cram_files))'
+    for REPLY in ${cramfiles[@]+"${cramfiles[@]}"}; do
+        [[ -s "$REPLY" ]] || abort "Empty file: $REPLY" 66 # EX_NOINPUT
+    done
     tty pager slurpify diffcolor -- cram "$@" ${cramfiles[@]+"${cramfiles[@]}"}
 }
 
