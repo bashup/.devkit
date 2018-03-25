@@ -206,7 +206,8 @@ loco_preconfig() {
 loco_findroot() {
     local proj_dk this_dk
     _loco_findroot "$@"
-    realpath.canonical "$LOCO_ROOT/.devkit/dk"; proj_dk=$REPLY
+    export DEVKIT_ROOT=$LOCO_ROOT DEVKIT_HOME=$LOCO_ROOT/.devkit
+    realpath.canonical "$DEVKIT_HOME/dk"; proj_dk=$REPLY
     realpath.canonical "$BASH_SOURCE"; this_dk=$REPLY
     [[ "$proj_dk" == "$this_dk" || ! -x "$proj_dk" ]] || exec "$proj_dk" "$@";
 }
@@ -218,7 +219,7 @@ loco_loadproject() {
     [[ ! "${BASHER_INSTALL_BIN-}" || ${BASHER_INSTALL_BIN#$PWD} == "$BASHER_INSTALL_BIN" ]] &&
         abort "Your .envrc must define a *local* installation of basher!" 78 # EX_CONFIG
 
-    require dk linkbin .devkit/dk   # make sure there's a local dk
+    require dk linkbin "$DEVKIT_HOME/dk"   # make sure there's a local dk
     $LOCO_LOAD "$1"
 }
 ```
