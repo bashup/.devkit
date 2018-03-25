@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+dk use: tty
+
 [[ -f .cramrc ]] || export CRAM="${CRAM-"--indent=4 --shell=bash --verbose"}"
 
 cram.files() { ls specs/*.cram.md; }
@@ -15,16 +17,7 @@ dk.cram() {
     dk bootstrap;
     require cram install-cram
     IFS=$'\n' eval 'local cramfiles=($(run cram_files))'
-    if (($#)); then
-         ${cramfiles[@]+ cram "$@" "${cramfiles[@]}"}
-    else cram ${cramfiles[@]+"${cramfiles[@]}"} | {
-        if have-any pygmentize; then
-            pygmentize -l diff | slurpy
-        else
-            slurpy
-        fi
-    } | cram.pager
-    fi
+    tty pager slurpify diffcolor -- cram "$@" ${cramfiles[@]+"${cramfiles[@]}"}
 }
 
 install-cram() {
@@ -41,3 +34,6 @@ slurpy() {
     # This keeps cram and pygmentize happy and SIGPIPE-free!
     while read -rd ''; do printf "%s" "$REPLY"; done; printf "%s" "$REPLY";
 }
+
+diffcolor() { tty-tool COLORDIFF colordiff || tty-tool COLORDIFF pygmentize -l diff; }
+slurpify()  { REPLY=slurpy; }

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+dk use: tty
+
 dk.watch() {
     require-any entr abort "Please install entr (http://entrproject.org/) to watch files" 69
     require-any tput
@@ -16,5 +18,5 @@ watch.files() {
 
 entr-watch() {
     # emulate watch's single-screen behavior with entr
-    entr -c -d -s "$* "'| head -n $(( $(tput lines) - 2 ))'
+    tty -- entr -c -d -s "$* "'| head -n $(( $(tput lines) - 2 ))'
 }
