@@ -74,6 +74,7 @@ before "build"   dk test
 # Cleanup
 clean_deps() { [[ "$BASHER_PREFIX" == "$PWD/.deps" ]] && rm -rf "$BASHER_PREFIX"; }
 
+event off "before_clean" dk bootstrap   # don't bootstrap during clean
 on    "clean" clean_deps
 after "clean" hash -r
 after "clean" linkbin .devkit/dk
