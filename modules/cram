@@ -6,16 +6,18 @@ cram.files() { ls specs/*.cram.md; }
 cram.pager() { less -FRX; }
 if [[ ${TRAVIS-} == true ]] ; then cram.pager() { cat; } fi
 
-test.files() { cram.files; }
+on test_files run cram_files
+on cram_files cram.files
 
-dk.test() { dk cram; }
+on test dk cram
+
 dk.cram() {
     dk bootstrap;
     require cram install-cram
-    IFS=$'\n' eval 'local cramfiles=($(cram.files))'
+    IFS=$'\n' eval 'local cramfiles=($(run cram_files))'
     if (($#)); then
-         cram "$@" "${cramfiles[@]}"
-    else cram "${cramfiles[@]}" | {
+         ${cramfiles[@]+ cram "$@" "${cramfiles[@]}"}
+    else cram ${cramfiles[@]+"${cramfiles[@]}"} | {
         if have-any pygmentize; then
             pygmentize -l diff | slurpy
         else

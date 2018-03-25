@@ -3,16 +3,16 @@
 # Use cram and watch for testing, and provide a shell console
 dk use: cram entr-watch shell-console bash32
 
-dk.build() {
-    require mdsh       github bashup/mdsh      master bin/mdsh
-    require loco       github bashup/loco      master bin/loco
-    require realpaths  github bashup/realpaths master realpaths
+on boot require mdsh           github bashup/mdsh      master bin/mdsh
+on boot require loco           github bashup/loco      master bin/loco
+on boot require realpaths      github bashup/realpaths master realpaths
+on boot require bashup.events  github bashup/events    master bashup.events
 
-    mdsh --out dk --compile dk.md && chmod +x dk || abort "compile failed w/code $?" $?
-}
+on build mdsh --out dk --compile dk.md
+on build chmod +x dk
 
 # Auto-build dk and re-exec it if needed
 if [[ ! -x dk || dk.md -nt dk ]]; then
-    dk.build
-    exec "./dk" "${LOCO_ARGS[@]}"
+    on build exec "./dk" ${LOCO_ARGS[@]+"${LOCO_ARGS[@]}"}
+    dk build
 fi

@@ -6,8 +6,9 @@
 @module dk.md
 @main loco_main   # use loco's main as our main
 
-@import pjeby/license @comment LICENSE
+@import pjeby/license @comment    LICENSE
 @import bashup/loco   mdsh-source "$BASHER_PACKAGES_PATH/bashup/loco/loco.md"
+@import bashup/events cat         "$BASHER_PACKAGES_PATH/bashup/events/bashup.events"
 ```
 
 # dk - the devkit CLI
@@ -35,27 +36,52 @@
 
 <!-- tocstop -->
 
+## Event Handling
+
+Define some shorthand for common tasks:
+
+```shell
+on() { event on "$@"; }
+before() { event on "before_$@"; }
+after()  { event on "after_$@"; }
+emit() { event emit "$@"; }
+run() { emit "before_$@"; emit "$@"; emit "after_$@"; }
+```
+
 ## Scripts To Rule Them All
 
 dk provides skeletons for all the "Scripts to Rule Them All" commands, which can be overridden in the project's `.dkrc` file.  The defaults all do nothing, or abort with an error message, but `dk use:` ing other devkit modules or redefining the functions can change that:
 
 ```shell
-dk.bootstrap() { :; }
-dk.setup()     { dk bootstrap; }
-dk.update()    { dk bootstrap; }
-dk.cibuild()   { dk test; }
-dk.clean()     {
-    [[ "$BASHER_PREFIX" == "$PWD/.deps" ]] && rm -rf "$BASHER_PREFIX"
-    hash -r; linkbin .devkit/dk
-}
+command-event() { event has "$1" || undefined-command "$1"; run "$@"; }
 
-dk.server()  { undefined-command server; }
-dk.test()    { undefined-command test; }
-dk.console() { undefined-command console; }
+dk.bootstrap() { event fire "boot"; }  # only run bootstrap callbacks once, can be no-op
+
+# default commands
+for REPLY in setup update build cibuild server test console clean; do
+    eval "dk.$REPLY() { command-event $REPLY \"\$@\"; }"
+    event once "before_$REPLY" dk bootstrap    # start everything with bootstrap
+done
+
+# Setup and update are ok as no-ops
+on "setup"  :
+on "update" :
+
+# Test before build and cibuild
+before "cibuild" dk test
+before "build"   dk test
+
+# Cleanup
+clean_deps() { [[ "$BASHER_PREFIX" == "$PWD/.deps" ]] && rm -rf "$BASHER_PREFIX"; }
+
+on    "clean" clean_deps
+after "clean" hash -r
+after "clean" linkbin .devkit/dk
 
 undefined-command() {
     abort "This project does not have a $1 command defined." 69   # EX_UNAVAILABLE
 }
+
 abort()    { log "$1"; exit $2; }
 log()      { echo "$1" >&2; }
 ```
