@@ -200,7 +200,7 @@ command-event() { event has "$1" || undefined-command "$1"; run "$@"; }
 dk.bootstrap() { event fire "boot"; }  # only run bootstrap callbacks once, can be no-op
 
 # default commands
-for REPLY in setup update build cibuild server test console clean; do
+for REPLY in setup update build cibuild server test console clean files_changed; do
     eval "dk.$REPLY() { command-event $REPLY \"\$@\"; }"
     event once "before_$REPLY" dk bootstrap    # start everything with bootstrap
 done
