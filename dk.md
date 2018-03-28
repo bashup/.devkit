@@ -64,8 +64,8 @@ for REPLY in setup update build cibuild server test console clean; do
 done
 
 # Setup and update are ok as no-ops
-on "setup"  :
-on "update" :
+on "default_setup"  :
+on "default_update" :
 
 # Test before build and cibuild
 before "cibuild" dk test
@@ -80,7 +80,11 @@ after "clean" hash -r
 after "clean" linkbin .devkit/dk
 
 undefined-command() {
-    abort "This project does not have a $1 command defined." 69   # EX_UNAVAILABLE
+    if event has "default_$1"; then
+        emit "before_$@"; emit "default_$@"; "after_$@";
+    else
+        abort "This project does not have a $1 command defined." 69   # EX_UNAVAILABLE
+    fi
 }
 
 abort()    { log "$1"; exit $2; }
