@@ -223,7 +223,7 @@ after "clean" linkbin .devkit/dk
 
 undefined-command() {
     if event has "default_$1"; then
-        emit "before_$@"; emit "default_$@"; "after_$@";
+        emit "before_$@"; emit "default_$@"; emit "after_$@";
     else
         abort "This project does not have a $1 command defined." 69   # EX_UNAVAILABLE
     fi
