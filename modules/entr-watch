@@ -20,5 +20,5 @@ watch.files() {
 
 entr-watch() {
     # emulate watch's single-screen behavior with entr
-    tty -- entr -c -d -s "$* "'| head -n $(( $(tput lines) - 2 ))'
+    tty -- entr -c -d -s 'DEVKIT_PAGER="head -n $(( $(tput lines) - 2))" '"$*"
 }
