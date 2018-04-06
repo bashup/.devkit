@@ -20,6 +20,5 @@ tty() {
 		! $1 || pipe="| $REPLY$pipe"; shift
 	done
 	event quote "${@:2}"
-	! isatty || REPLY="${tty_prefix-DEVKIT_}ISATTY=1 $REPLY"
 	eval "$REPLY $pipe"
 }
