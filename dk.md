@@ -6,9 +6,9 @@
 @module dk.md
 @main loco_main   # use loco's main as our main
 
-@import pjeby/license @comment    LICENSE
-@import bashup/loco   mdsh-source "$BASHER_PACKAGES_PATH/bashup/loco/loco.md"
-@import bashup/events cat         "$BASHER_PACKAGES_PATH/bashup/events/bashup.events"
+@require pjeby/license @comment    LICENSE
+@require bashup/loco   mdsh-source "$BASHER_PACKAGES_PATH/bashup/loco/loco.md"
+@require bashup/events cat         "$BASHER_PACKAGES_PATH/bashup/events/bashup.events"
 ```
 
 # dk - the devkit CLI
