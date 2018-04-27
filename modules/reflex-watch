@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+
+dk.watch() {
+	# Need reflex for this
+	require-any reflex go get github.com/bashup/reflex
+
+	# Trap SIGUSR1 to restart the watch with new configuration
+	event quote "$@"
+	trap "echo Configuration changed: restarting watch; echo; exec dk watch $REPLY" SIGUSR1
+
+	# Run any watch+ commands
+	event emit "before_watch" || echo "[$?]"
+
+	# Run reflex with our current watch configuration, suppressing "killed" msg
+	# via background job + wait
+	reflex -d none --sequential "$@" -c <(event emit reflex_config) & wait $!
+}
+
+watch() {
+	# Parse `[globs...] [options...] command...`, converting globs to regexes
+	local re= RE=
+	while (($#)) && [[ $1 != -* ]]; do
+		if [[ $1 == '!'* ]]; then
+			glob2re "${1:1}"; RE+=${RE:+|}$REPLY
+		else
+			glob2re "$1";     re+=${re:+|}$REPLY
+		fi
+		shift
+	done
+	[[ ! $RE ]] || set -- -R "^($RE)\$" "$@"
+	[[ ! $re ]] || set -- -r "^($re)\$" "$@"
+	raw-watch "$@"
+}
+
+watch+ () {
+	# Run the specified command at the start of watch, as well as on changes
+	watch "$@"
+	while (($#)) && [[ $1 != '--' ]]; do shift; done; [[ ${1-} != '--' ]] || shift
+	before watch "$@"
+}
+
+watch-reload() {
+	# Restart watch if given pattern matches
+	watch "$@" -- bash -c 'kill -9 $PPID; kill -SIGUSR1 '$$';'
+}
+
+raw-watch() {
+	# add an entry to the reflex configuration
+	reflex-quote "$@"; on reflex_config echo "$REPLY"
+}
+
+reflex-quote() {
+	# Quote args in such a way that reflex will read them correctly
+	local q="'" qq="'\"'\"'"
+	set -- "${@//$q/$qq}"
+	set -- "${@/#/$q}"
+	set -- "${@/%/$q}"
+	REPLY="$*"
+}
+
+glob2re() {
+	# Convert a glob to a regex, w/globstar (**) support
+	local i c re=
+	for (( i=0; i<${#1}; i++ )); do
+		c=${1:$i:1}
+		case $c in
+		[^$^+.\(\)=!|?*]) re+=$c ;;
+		[$^+.\(\)=!|]) re+=\\$c ;;
+		"?") re+=. ;;
+		"*")
+			if [[ ${1:$i} =~ "**"(/|$) ]] && { !((i)) || [[ ${1:$i-1:1} == '/' ]]; }; then
+				re+='(([^/]*(/|$))*)'; i+=2   # skip '*/'
+			else re+='[^/]*'
+			fi
+			;;
+		*) re+=$c ;;
+		esac
+	done ; REPLY=$re
+}
+
+watch-reload .dkrc	# automatically re-run watch if configuration changes
+

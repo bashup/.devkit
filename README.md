@@ -31,6 +31,7 @@ Dependencies are installed to a `.deps` directory, with executables in `.deps/bi
 - [All-Purpose Modules](#all-purpose-modules)
   * [cram](#cram)
   * [entr-watch](#entr-watch)
+  * [reflex-watch](#reflex-watch)
   * [shell-console](#shell-console)
 - [Modules for Python-Using Projects](#modules-for-python-using-projects)
   * [virtualenv](#virtualenv)
@@ -145,6 +146,36 @@ For example, if you wanted to change the files to be processed by cram, you can 
 The [entr-watch](modules/entr-watch) module defines a default `dk.watch` command to provide a `script/watch` command that watches for file changes (using [entr](http://entrproject.org/)) and reruns a command (`dk test` by default).  To enable it, `dk use: entr-watch` in your `.dkrc`, and then optionally define a `watch.files` function to output which files to watch.  (By default, it outputs the current directory contents and any `test.files`.)
 
 The watch command requires the `entr` and `tput` commands be installed.  The former is used to watch files for changes, and the latter to compute how many lines of watched command output can be displayed without scrolling.  (The watched command's output is cut off using `head`, and the screen is cleared whenever the watched command is re-run.)
+
+#### reflex-watch
+
+The [reflex-watch](modules/reflex-watch) module lets you define file patterns to watch for, and commands to run when files change.  Running `dk watch` (or `script/watch` if you create a link for it) will run [reflex](https://github.com/cespare/reflex) to watch the files and run commands.  (If reflex isn't installed, the `watch` command will try to install it to the project `.deps` directory using `go get`.)
+
+The way you add patterns is by calling the `watch` or `watch+` functions inside your `.dkrc`.  Each of these functions accepts zero or more glob patterns (optionally negated with a leading `!`), followed by zero or more reflex options, followed by `--` and a command to run.  If no globs or options are specified, the command will run every time any file within the project changes.  Some examples:
+
+~~~sh
+# When a .cram.md file under specs/ is changed, rerun tests; also run them at start of watch:
+watch+ 'specs/**/*.cram.md' -- dk test
+
+# The `watch+` command above is shorthand for these two commands:
+before "watch" dk test
+watch 'specs/**/*.cram.md' -- dk test
+
+# But in some cases, you will want the initial and on-change commands
+# to be different.  For example, the below will run a full tree sync
+# at start of watch, but sync only individual files when they change:
+before "watch" wp postmark tree posts/
+watch 'posts/**/*.md' '!**/.~*.md' -- wp postmark sync {}
+
+# Brace expansion can be used, but it has to be outside quotes (so bash will do it)
+watch '**/*'{.sass,.scss} -- dk build
+~~~
+
+Notice that glob patterns must be quoted to prevent the shell from interpreting them, rather than passing the wildcards to the watch command.  If you want to use brace expansion (e.g. `{foo,bar}`), the brace parts need to be outside quotes so that the shell *will* interpret them.
+
+The difference between `watch` and `watch+` is that `watch+` runs the command immediately upon running `dk watch`, in addition to when files change.  This avoids the need to save something just to force the command to run.  You should only use `watch+` if you are *not* using `{}` to run the command on a single file, however.  If you
+
+If your `.dkrc` is changed during a watch run, the `dk watch` command will re-execute itself to reload the changed watch configuration.  If you have other files that should trigger such a configuration reload, you can use `watch-reload` *globpattern...* to add them to the list.
 
 #### shell-console
 

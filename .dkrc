@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Use cram and watch for testing, and provide a shell console
-dk use: cram entr-watch shell-console bash32
+dk use: cram reflex-watch shell-console bash32
 
 on boot require mdsh           github bashup/mdsh      master bin/mdsh
 on boot require loco           github bashup/loco      master bin/loco
@@ -16,3 +16,5 @@ if [[ ! -x dk || dk.md -nt dk ]]; then
     on build exec "./dk" ${LOCO_ARGS[@]+"${LOCO_ARGS[@]}"}
     dk build
 fi
+
+watch+ '!dk' '!**/*.err'  -- dk build
