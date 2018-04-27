@@ -248,6 +248,7 @@ github() {
     git clone -q --depth=1 -b "${2:-master}" "https://github.com/$1" "$BASHER_PACKAGES_PATH/$1"
     local bin; for bin in "${@:3}"; do linkbin "$BASHER_PACKAGES_PATH/$1/$bin"; done
 }
+go() { require-any go; unset -f go; command go "$@"; }
 linkbin() {
     mkdir -p "$BASHER_INSTALL_BIN"
     relative-symlink "$1" "$BASHER_INSTALL_BIN/${2:-${1##*/}}"

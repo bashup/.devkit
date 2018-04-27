@@ -118,6 +118,14 @@ github() {
 }
 ```
 
+### go
+
+Some utilities need to be built using `go get`, but go itself may not be present on the target system.  We provide a wrapper that requests its installation, for use in commands like `require tool go get github.com/something/tool`.
+
+```shell
+go() { require-any go; unset -f go; command go "$@"; }
+```
+
 ### linkbin and catbin
 
 If you need to link something under a different name than the original, you can use `linkbin` *fullpath newname* instead of an extra argument to `github`.  But you have to provide the *full* path to the source, not just the path within a repository.  You can also use `catbin` *cmdname* *files...* to create an executable file in `.deps/bin`, either passing it files or piping it text via standard input.
