@@ -11,10 +11,11 @@ on boot require bashup.events  github bashup/events    master bashup.events
 on build mdsh --out dk --compile dk.md
 on build chmod +x dk
 
+unwatch dk '**/.~*.md' '**/*.err'
+watch+ -- dk build
+
 # Auto-build dk and re-exec it if needed
 if [[ ! -x dk || dk.md -nt dk ]]; then
     on build exec "./dk" ${LOCO_ARGS[@]+"${LOCO_ARGS[@]}"}
     dk build
 fi
-
-watch+ '!dk' '!**/*.err'  -- dk build

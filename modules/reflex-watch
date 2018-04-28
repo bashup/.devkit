@@ -17,19 +17,26 @@ dk.watch() {
 }
 
 watch() {
+	# Output the command line as part of the reflex config
+	parse-watch "on reflex_config __put-watch" "$@"
+}
+
+parse-watch() {
 	# Parse `[globs...] [options...] command...`, converting globs to regexes
-	local re= RE=
+	local re= RE= cmd=$1; shift
 	while (($#)) && [[ $1 != -* ]]; do
 		if [[ $1 == '!'* ]]; then
-			glob2re "${1:1}"; RE+=${RE:+|}$REPLY
+			glob2re "${1:1}"
+			RE+=\|$REPLY
 		else
-			glob2re "$1";     re+=${re:+|}$REPLY
+			glob2re "$1"
+			re+=\|$REPLY
 		fi
 		shift
 	done
-	[[ ! $RE ]] || set -- -R "^($RE)\$" "$@"
-	[[ ! $re ]] || set -- -r "^($re)\$" "$@"
-	raw-watch "$@"
+	[[ ! $RE ]] || set -- -R "^(${RE#|})\$" "$@"
+	[[ ! $re ]] || set -- -r "^(${re#|})\$" "$@"
+	$cmd "$@"
 }
 
 watch+ () {
@@ -39,14 +46,44 @@ watch+ () {
 	before watch "$@"
 }
 
+RELOAD_MATCH=
+RELOAD_REJECT=
+
 watch-reload() {
 	# Restart watch if given pattern matches
-	watch "$@" -- bash -c 'kill -9 $PPID; kill -SIGUSR1 '$$';'
+	parse-watch __add_reload "$@"
 }
 
-raw-watch() {
-	# add an entry to the reflex configuration
-	reflex-quote "$@"; on reflex_config echo "$REPLY"
+__add_reload() {
+	RELOAD_MATCH+=$re
+	RELOAD_REJECT+=$RE
+	export WATCH_PID=$$
+	[[ ! "$re$RE" ]] || on reflex_config __reload-watch
+}
+
+__reload-watch() {
+	${RELOAD_REJECT:+ set -- -R "${RELOAD_REJECT#|}" "$@"}
+	${RELOAD_MATCH:+  set -- -r "${RELOAD_MATCH#|}"  "$@"}
+	__put-watch "$@" -- bash -c 'kill -9 $PPID; kill -SIGUSR1 '$WATCH_PID';'
+}
+
+UNWATCH_RE=
+
+unwatch() {
+	# Globally exclude the given globs from all watch patterns
+	for REPLY; do glob2re "$REPLY"; UNWATCH_RE+=${UNWATCH_RE:+|}"^($REPLY)\$"; done
+}
+
+unwatch-re() {
+	# Globally exclude the given regexes from all watch patterns
+	for REPLY; do UNWATCH_RE+=${UNWATCH_RE:+|}"($REPLY)"
+	done
+}
+
+__put-watch() {
+	# Output a reflex with global exclusion(s) added
+	reflex-quote ${UNWATCH_RE:+ -R "$UNWATCH_RE"} "$@"
+	echo -E "$REPLY"
 }
 
 reflex-quote() {
@@ -64,9 +101,9 @@ glob2re() {
 	for (( i=0; i<${#1}; i++ )); do
 		c=${1:$i:1}
 		case $c in
-		[^$^+.\(\)=!|?*]) re+=$c ;;
+		[!$^+.\(\)=!|?*]) re+=$c ;;
 		[$^+.\(\)=!|]) re+=\\$c ;;
-		"?") re+=. ;;
+		"?") re+=[^/] ;;
 		"*")
 			if [[ ${1:$i} =~ "**"(/|$) ]] && { !((i)) || [[ ${1:$i-1:1} == '/' ]]; }; then
 				re+='(([^/]*(/|$))*)'; i+=2   # skip '*/'
@@ -75,8 +112,12 @@ glob2re() {
 			;;
 		*) re+=$c ;;
 		esac
-	done ; REPLY=$re
+	done
+	REPLY=$re
 }
 
 watch-reload .dkrc	# automatically re-run watch if configuration changes
+
+
+
 
