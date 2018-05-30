@@ -13,7 +13,7 @@ dk.watch() {
 
 	# Run reflex with our current watch configuration, suppressing "killed" msg
 	# via background job + wait
-	reflex -d none --sequential "$@" -c <(event emit reflex_config) & wait $!
+	reflex -d none --sequential "$@" -c <(event emit reflex_config) </dev/null & wait $!
 }
 
 watch() {
@@ -105,7 +105,7 @@ glob2re() {
 		[$^+.\(\)=!|]) re+=\\$c ;;
 		"?") re+=[^/] ;;
 		"*")
-			if [[ ${1:$i} =~ "**"(/|$) ]] && { !((i)) || [[ ${1:$i-1:1} == '/' ]]; }; then
+			if [[ ${1:$i} =~ "**"(/|$) ]] && { ! ((i)) || [[ ${1:$i-1:1} == '/' ]]; }; then
 				re+='(([^/]*(/|$))*)'; i+=2   # skip '*/'
 			else re+='[^/]*'
 			fi
