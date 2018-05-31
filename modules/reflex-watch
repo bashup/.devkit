@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 dk.watch() {
 	# Need reflex for this
 	require-any reflex go get github.com/bashup/reflex
@@ -8,8 +7,9 @@ dk.watch() {
 	event quote "$@"
 	trap "echo Configuration changed: restarting watch; echo; exec dk watch $REPLY" SIGUSR1
 
-	# Run any watch+ commands
-	event emit "before_watch" || echo "[$?]"
+	export DEVKIT_PAGER=${DEVKIT_PAGER-pager.watch}     # Use the watch pager by default
+	event emit "before_watch" || echo "[$?]"            # Run any watch+ commands
+	isatty || export DEVKIT_ISATTY=0                    # reflex always runs w/pseudo-tty
 
 	# Run reflex with our current watch configuration, suppressing "killed" msg
 	# via background job + wait

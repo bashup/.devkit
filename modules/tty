@@ -4,15 +4,24 @@ jq() { if pager; then command jq -C "$@" | $REPLY; else command jq "$@"; fi; }
 
 pager() { tty-tool PAGER less -FRX; }
 
+pager.screenful() { head -n $(( $(tput lines) - ${1-2} )); }
+pager.watch()     { clear; date; echo; pager.screenful 3; }
+
 tty-tool() {
 	isatty || return; set -- "${tty_prefix-DEVKIT_}$@"; REPLY=${!1-};
 	if [[ ! ${!1+_} ]] && command -v "$2" >/dev/null; then
-		event quote "${@:2}"
+		event quote command "${@:2}"
 	else [[ $REPLY ]];
 	fi
 }
 
-isatty() { local t=${tty_prefix-DEVKIT_}ISATTY; [[ ${!t-} || -t 1 ]]; }
+isatty() {
+	local t=${tty_prefix-DEVKIT_}ISATTY
+	if [[ ${!t+_} ]]; then
+		case "${!t-}" in 0|"") false ;; ?*) true ;; esac
+	else [[ -t 1 ]]
+	fi
+}
 
 tty() {
 	local pipe=
