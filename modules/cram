@@ -38,5 +38,4 @@ slurpy() {
     while read -rd ''; do printf "%s" "$REPLY"; done; printf "%s" "$REPLY";
 }
 
-diffcolor() { tty-tool COLORDIFF colordiff || tty-tool COLORDIFF pygmentize -l diff; }
 slurpify()  { REPLY=slurpy; }
