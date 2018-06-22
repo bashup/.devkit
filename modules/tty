@@ -4,7 +4,7 @@ jq() { if pager; then command jq -C "$@" | $REPLY; else command jq "$@"; fi; }
 
 pager() { tty-tool PAGER less -FRX; }
 
-pager.screenfull() { head -n $(( $(tput lines) - ${1-2} )); }
+pager.screenfull() { require-any tput; head -n $(( $(tput lines) - ${1-2} )); }
 pager.watch()      { clear; date; echo; pager.screenfull 4; }
 
 diffcolor() { tty-tool COLORDIFF colordiff || tty-tool COLORDIFF pygmentize -l diff; }
