@@ -30,7 +30,9 @@ Dependencies are installed to a `.deps` directory, with executables in `.deps/bi
 - [.devkit Modules](#devkit-modules)
 - [All-Purpose Modules](#all-purpose-modules)
   * [cram](#cram)
+- [Watch Modules](#watch-modules)
   * [entr-watch](#entr-watch)
+  * [modd-watch](#modd-watch)
   * [reflex-watch](#reflex-watch)
   * [shell-console](#shell-console)
 - [Modules for Python-Using Projects](#modules-for-python-using-projects)
@@ -141,50 +143,101 @@ You can then override the module's defaults by defining new functions.
 
 For example, if you wanted to change the files to be processed by cram, you can redefine the `cram.files` function, and to change the pager, redefine the `cram.pager` function.  To change the cram options, set the `CRAM` environment variable, or add a `.cramrc` file to your project.
 
+### Watch Modules
+
+It's a common task to want to watch files and run commands when they change.  devkit currently supports three file watching tools:
+
+* [entr](http://entrproject.org/), via the [entr-watch](#entr-watch) module
+* [modd](https://github.com/cortesi/modd), via the [modd-watch](#modd-watch) module, and
+* [reflex](https://github.com/cespare/reflex), via the [reflex-watch](#reflex-watch) module
+
+Each of these tools has different strengths and weaknesses.  entr only runs a single command, and has to be piped a list of files (but can detect when the list needs to be refreshed).  modd and reflex can run multiple commands based on matching rules, but have their own behavioral quirks.
+
+reflex can handle regular expressions and can detect directories being created during a watch, but scans *all* files by default, which means you must explicitly add exclusions for anything your project builds, or it will cause infinite build loops.  Its built-in globs do not support recursion or brace expansion, so devkit tries to emulate these features using bash brace expansion and converting globs to regular expressions.
+
+modd, on the other hand, *only* processes globs, but has brace expansion and recursion built in.  It doesn't detect new directories being created, but only matches explicitly-given patterns, so you're less likely to create an infinite loop by rerunning a build as the result of running a build.
+
 #### entr-watch
 
 The [entr-watch](modules/entr-watch) module defines a default `dk.watch` command to provide a `script/watch` command that watches for file changes (using [entr](http://entrproject.org/)) and reruns a command (`dk test` by default).  To enable it, `dk use: entr-watch` in your `.dkrc`, and then optionally define a `watch.files` function to output which files to watch.  (By default, it outputs the current directory contents and any `test.files`.)
 
 The watch command requires the `entr` and `tput` commands be installed.  The former is used to watch files for changes, and the latter to compute how many lines of watched command output can be displayed without scrolling.  (The watched command's output is cut off using `head`, and the screen is cleared whenever the watched command is re-run.)
 
-#### reflex-watch
+#### modd-watch
 
-The [reflex-watch](modules/reflex-watch) module lets you define "watch rules": file patterns to watch for, combined with commands to run those when files change.  Running `dk watch` (or `script/watch` if you create a link for it) will run [reflex](https://github.com/cespare/reflex) to watch the files and run commands.  (If reflex isn't installed, the `watch` command will try to install it to the project `.deps` directory using `go get`.)
+The [modd-watch](modules/modd-watch) module lets you define "watch rules": file patterns to watch for, combined with commands to run those when files change.  Running `dk watch` (or `script/watch` if you create a link for it) will run [modd](https://github.com/cortesi/modd) to watch the files and run commands.  (If modd isn't installed, the `watch` command will try to install it to the project `.deps` directory using `go get`.)
 
-The way you add rules is by calling the `watch` or `watch+` functions from your `.dkrc`.  Each of these functions accepts zero or more glob patterns (optionally negated with a leading `!`), followed by zero or more reflex options, followed by `--` and a command to run.  If no globs or options are specified, the command will run every time any file within the project changes.  (You can also add global exclusion globs with `unwatch`, and global exclusion regexes with `unwatch-re`.)  Some examples:
+The way you add rules is by calling the `watch` or `watch+` functions from your `.dkrc`.  Each of these functions accepts zero or more glob patterns (optionally negated with a leading `!`), followed by `--` and a command to run.  If no globs are specified, the command will run once, at the beginning of the watch.  (You can also add global exclusion globs with `unwatch`.)  Some examples:
 
-~~~sh
+```sh
 # When a .cram.md file under specs/ is changed, rerun tests; also run them at start of watch:
 watch+ 'specs/**/*.cram.md' -- dk test
 
 # The `watch+` command above is shorthand for these two commands:
-before "watch" dk test
+watch -- dk test
 watch 'specs/**/*.cram.md' -- dk test
 
 # But in some cases, you will want the initial and on-change commands
 # to be different.  For example, the below will run a full tree sync
 # at start of watch, but sync only individual files when they change:
 #
-before "watch" wp postmark tree posts/
-watch 'posts/**/*.md' '!**/.~*.md' -- wp postmark sync {}
+watch -- wp postmark tree posts/
+watch 'posts/**/*.md' -- wp postmark sync @mods   # just sync modified files
 
 # Exclude specified pattern(s) from ALL watches, past and future.
-# It's best to do this for any files generated by your builds, tests,
-# etc., to keep them from being self-triggered in an infinite loop!
-#
-unwatch 'build/**' '**/*.err'  # ignore builds, and cram-generated .err files
+unwatch 'build/**' '**/.~*.md'  # ignore files under build/ and editor temp files
 
-# Brace expansion can be used, but it has to be outside quotes (so bash will do it)
-watch '**/*'{.sass,.scss} -- dk build
-~~~
+# Brace expansion can be used
+watch '**/*{.sass,.scss}' -- dk build
+```
 
-Notice that glob patterns must be quoted to prevent the shell from interpreting them, rather than passing the wildcards to the watch command.  If you want to use brace expansion (e.g. `{foo,bar}`), the brace parts need to be outside quotes so that the shell *will* interpret them.
+Notice that glob patterns must be quoted to prevent the shell from interpreting them, rather than passing the wildcards to the watch command.
 
-The difference between `watch` and `watch+` is that `watch+` runs the command immediately upon running `dk watch`, in addition to when files change.  This avoids the need to save something just to force the command to run.  If you're using `{}` to run the command on individual files, however, or if you need the initially-run command to be different, you should separate your commands into `before watch` *init-command...* and `watch` *[glob...]\[options...]* `--` *change-command...*, to run *init-command* when `watch` begins, and *change-command* when changes occur.
+The difference between `watch` and `watch+` is that `watch+` runs the command immediately upon running `dk watch`, in addition to when files change.  (This avoids the need to save something just to force the command to run.)
 
-Note that because reflex queues the changes it observes, and defaults to watching **everything** that isn't one of its common exclusion patterns, this can lead to infinitely looping rebuilds unless your build targets or test outputs are excluded from the watch rules that run them.  You can use `unwatch` or `unwatch-re` to define global exclusions that will not trigger any `watch` rules (including `watch+` and `watch-reload` rules).
+If you need the initially-run command to be different, you should separate your commands into `watch --` *init-command...* and `watch` *[glob...]* `--` *change-command...*, to run *init-command* when the watch begins, and *change-command* when changes occur.
 
-Finally, note that if your `.dkrc` is changed during a watch run, the `dk watch` command will re-execute itself to reload the changed watch configuration.  If you have other files that should trigger such a configuration reload, you can use `watch-reload` *glob...* to add them to the list.  (Do not include reflex options, `--`, or a command; they will be ignored.)
+Finally, note that if your `.dkrc` file is changed during a watch run, the `dk watch` command will re-execute itself to reload the changed watch configuration.  If you have other files that should trigger such a configuration reload, you can use `watch-reload` *glob...* to add them to the list.
+
+#### reflex-watch
+
+The [reflex-watch](modules/reflex-watch) module is almost identical to modd-watch in function, but using [reflex](https://github.com/cespare/reflex) to watch files and run commands.  (If reflex isn't installed, the `watch` command will try to install it to the project `.deps` directory using `go get`.)
+
+The key differences are:
+
+* reflex does not support brace expansion, so if you need it, you have to use bash's brace expansion in your .dkrc instead, e.g.:
+
+  ```sh
+  # Brace expansion can be used, but it has to be outside quotes (so bash will do it)
+  watch '**/*'{.sass,.scss} -- dk build
+  ```
+
+* Instead of `watch -- ` *initcommand* to define an initial command, you have to use `before watch ` *initcommand*.  e.g.:
+
+  ```sh
+  # The reflex equivalent to `watch+ 'specs/**/*.cram.md' -- dk test` is:
+  before "watch" dk test
+  watch 'specs/**/*.cram.md' -- dk test
+  ```
+
+* reflex uses `{}` to indicate file arguments instead of `@mods` (and has no equivalent to `@dirmods`), e.g.:
+
+  ```sh
+  # run a full tree sync at start of watch, but sync only individual files when they change:
+  before "watch" wp postmark tree posts/
+  watch 'posts/**/*.md' '!**/.~*.md' -- wp postmark sync {}
+  ```
+
+* You can specify any of reflex's watch-specific options before the `--` in a `watch` or `watch+` command, including using `-r` and `-R` to specify regular expressions to include or exclude, e.g.:
+
+  ```sh
+  watch -r '.*\.md' -- echo "A markdown file in any directory changed:" {}
+  watch -R '.*\.md' -- echo "A NON-markdown file in any directory changed:" {}
+  ```
+
+  Note: this applies only to `watch` and `watch+`; the `watch-reload` and `unwatch` commands only accept globs, and `unwatch-re` only accepts regexes.
+
+* Because reflex queues the changes it observes, and defaults to watching **everything** that isn't one of its common exclusion patterns, you can end up with infinitely looping rebuilds unless your build targets or test outputs are excluded from the watch rules that run them.  You can use `unwatch` or `unwatch-re` to define global exclusion globs and/or regexes that will not trigger any `watch` rules (including `watch+` and `watch-reload` rules).
 
 #### shell-console
 

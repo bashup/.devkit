@@ -9,6 +9,7 @@
 
 # dk use: cram              # run tests using the "cram" functional test tool
 # dk use: entr-watch        # watch files and re-run tests or other commands
+# dk use: modd-watch        # watch multiple patterns and run different commands on them
 # dk use: reflex-watch      # watch multiple patterns and run different commands on them
 # dk use: shell-console     # make the "console" command enter a subshell
 # dk use: virtualenv        # enable creation and use of Python virtualenvs

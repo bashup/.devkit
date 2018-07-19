@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+dk use: tty
+
+dk.watch() {
+	require-any modd go get github.com/cortesi/modd  # Need modd for this
+	require-any tput  # for pager.watch
+
+	# Trap SIGUSR1 to restart the watch with new configuration
+	event quote "$@"
+	trap "echo Configuration changed: restarting watch; echo; exec dk watch $REPLY" SIGUSR1
+	export DEVKIT_PAGER=${DEVKIT_PAGER-pager.watch}     # Use the watch pager by default
+	event emit "before_watch" || echo "[$?]"            # Run any watch+ commands
+	isatty || export DEVKIT_ISATTY=0                    # reflex always runs w/pseudo-tty
+
+	# Run modd with our current watch configuration, suppressing "killed" msg
+	# via background job + wait
+	modd -cf <(event emit modd_conf) "$@" </dev/null & wait $!
+}
+
+watch() {
+	# Output the command line as part of the reflex config
+	on modd_conf __put-watch 'prep +onchange:' "$@"
+}
+watch+ () {
+	# Run the specified command at the start of watch, as well as on changes
+	on modd_conf __put-watch 'prep:' "$@"
+}
+
+RELOAD_PATTERNS=()
+UNWATCH_PATTERNS=()
+
+watch-reload() {
+	# Restart watch if given pattern matches
+	export WATCH_PID=$$; RELOAD_PATTERNS+=("$@"); on modd_conf __reload-watch
+}
+
+unwatch() {
+	# Globally exclude the given globs from all watch patterns
+	UNWATCH_PATTERNS+=("${@/#/!}")
+}
+
+__reload-watch() {
+	__put-watch 'prep +onchange:' "${RELOAD_PATTERNS[@]}" \
+		-- bash -c 'kill -SIGUSR1 '$WATCH_PID'; kill -9 $PPID'
+}
+
+__put-watch() {
+	# Output a reflex with global exclusion(s) added
+	local m="$1" patterns command
+
+	doubledash-split patterns command "${@:2}"
+	!((${#UNWATCH_PATTERNS[@]})) || patterns+=("${UNWATCH_PATTERNS[@]}")
+
+	!((${#patterns[@]})) || { pattern-quote "${patterns[@]}"; patterns=$REPLY; }
+	!((${#command[@]}))  || { event quote   "${command[@]}";  command=$REPLY; }
+
+	printf '%s {\n\t%s %s\n}\n\n' "${patterns-}" "$m" "${command-}"
+}
+
+doubledash-split() {
+	local __hd=$1 __tl=$2; shift 2; eval "$__hd=(); $__tl=()"
+	while (($#)) && [[ $1 != -- ]]; do
+		eval "$__hd"'+=("$1")'; shift
+	done
+	!(($#)) || shift
+	eval "$__tl"'=("$@")'
+}
+
+pattern-quote() {
+	# Quote patterns in such a way that modd will read them correctly
+	local bs=\\ q='"' qq=\\'"'
+	set -- "${@//$bs/$bs$bs}"  # double backslashes
+	set -- "${@//$q/$qq}"      # backslash quotes
+	set -- "${@/#/$q}"         # enclose in quotes
+	set -- "${@/%/$q}"
+	set -- "${@/#$q!/!$q}"     # Move pattern negation outside quotes
+	REPLY="$*"
+}
+
+# automatically re-run watch if configuration changes
+watch-reload .dkrc
