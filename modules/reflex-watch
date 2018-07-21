@@ -116,8 +116,7 @@ glob2re() {
 	REPLY=$re
 }
 
+# We use the tty module for pager and such
+dk use: tty
+
 watch-reload .dkrc	# automatically re-run watch if configuration changes
-
-
-
-

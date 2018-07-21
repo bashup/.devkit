@@ -2,7 +2,7 @@
 dk use: tty
 
 dk.watch() {
-	require-any modd go get github.com/cortesi/modd  # Need modd for this
+	require-any modd go get github.com/cortesi/modd/cmd/modd  # Need modd for this
 	require-any tput  # for pager.watch
 
 	# Trap SIGUSR1 to restart the watch with new configuration
