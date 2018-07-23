@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+export SHELLCHECK_OPTS
+
+have-any shellcheck || shellcheck() {
+	docker run --rm -i -e SHELLCHECK_OPTS -v "$PWD":/mnt koalaman/shellcheck "$@"
+}
+
+dk.shellcheck() {
+	dk use: tty; ! isatty || set -- "-Calways" "$@"
+	tty pager -- shellcheck "$@"
+}
