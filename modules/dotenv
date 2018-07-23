@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+require dotenv github bashup/dotenv master dotenv
+source "${BASHER_INSTALL_BIN}"/dotenv

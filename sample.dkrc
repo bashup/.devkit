@@ -7,15 +7,21 @@
 
 # Available modules (uncomment to use):
 
+# -- Shell/Generic Modules --
+# dk use: bash32            # enable doing tests/console/etc. in bash3.2 w/docker
 # dk use: cram              # run tests using the "cram" functional test tool
+# dk use: dotenv            # manipulate .env files (docker-compose format)
+# dk use: shell-console     # make the "console" command enter a subshell
+
+# -- Watch Modules --
 # dk use: entr-watch        # watch files and re-run tests or other commands
 # dk use: modd-watch        # watch multiple patterns and run different commands on them
 # dk use: reflex-watch      # watch multiple patterns and run different commands on them
-# dk use: shell-console     # make the "console" command enter a subshell
-# dk use: virtualenv        # enable creation and use of Python virtualenvs
+
+# -- Language-Specific Modules --
 # dk use: composer          # utilities for accessing composer-based dev tools
-# dk use: peridot           # run tests using peridot-php
 # dk use: psysh-console     # make the "console" command run the Psysh PHP REPL
-# dk use: bash32            # enable doing tests/console/etc. in bash3.2 w/docker
+# dk use: peridot           # run tests using peridot-php
+# dk use: virtualenv        # enable creation and use of Python virtualenvs
 
 # Define overrides, new commands, functions, etc. here:

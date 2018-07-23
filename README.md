@@ -30,11 +30,12 @@ Dependencies are installed to a `.deps` directory, with executables in `.deps/bi
 - [.devkit Modules](#devkit-modules)
 - [All-Purpose Modules](#all-purpose-modules)
   * [cram](#cram)
+  * [dotenv](#dotenv)
+  * [shell-console](#shell-console)
 - [Watch Modules](#watch-modules)
   * [entr-watch](#entr-watch)
   * [modd-watch](#modd-watch)
   * [reflex-watch](#reflex-watch)
-  * [shell-console](#shell-console)
 - [Modules for Python-Using Projects](#modules-for-python-using-projects)
   * [virtualenv](#virtualenv)
 - [Modules for PHP-Using Projects](#modules-for-php-using-projects)
@@ -143,6 +144,20 @@ You can then override the module's defaults by defining new functions.
 
 For example, if you wanted to change the files to be processed by cram, you can redefine the `cram.files` function, and to change the pager, redefine the `cram.pager` function.  To change the cram options, set the `CRAM` environment variable, or add a `.cramrc` file to your project.
 
+#### dotenv
+
+The [dotenv](modules/dotenv) module sources a local clone of the [bashup/dotenv](https://github.com/bashup/dotenv/) tool for manipulating .env files in [docker-compose format](https://docs.docker.com/compose/compose-file/#env_file).  After a `dk use: dotenv`, the rest of your `.dkrc` can use the `.env` function to read, edit, and set defaults in `.env` files -- perfect for project setup scripts or other commands that need configuration.
+
+In addition, if you are using `direnv` (or the console command of the shell-console module), then you can also use the `dotenv` command directly on the command line.
+
+For more information on how `dotenv` and `.env` work, please see the [dotenv documentation](https://github.com/bashup/dotenv/).
+
+#### shell-console
+
+The [shell-console](modules/shell-console) module implements a `dk.console` function to provide a `script/console` command that starts a bash subshell with the devkit API and all variables available -- a bit like dropping into a debugger for the `dk` command.  This is particularly handy if you don't have or use `direnv`, as it basically gives you an alternative to typing `script/foo` or `.devkit/dk foo`: within the subshell you can just `dk foo`.
+
+To activate this in your project, add a `dk use: shell-console` line to your `.dkrc`, just like .devkit does.  Running `dk console` or `script/console` will then enter a subshell.
+
 ### Watch Modules
 
 It's a common task to want to watch files and run commands when they change.  devkit currently supports three file watching tools:
@@ -238,12 +253,6 @@ The key differences are:
   Note: this applies only to `watch` and `watch+`; the `watch-reload` and `unwatch` commands only accept globs, and `unwatch-re` only accepts regexes.
 
 * Because reflex queues the changes it observes, and defaults to watching **everything** that isn't one of its common exclusion patterns, you can end up with infinitely looping rebuilds unless your build targets or test outputs are excluded from the watch rules that run them.  You can use `unwatch` or `unwatch-re` to define global exclusion globs and/or regexes that will not trigger any `watch` rules (including `watch+` and `watch-reload` rules).
-
-#### shell-console
-
-The [shell-console](modules/shell-console) module implements a `dk.console` function to provide a `script/console` command that starts a bash subshell with the devkit API and all variables available -- a bit like dropping into a debugger for the `dk` command.  This is particularly handy if you don't have or use `direnv`, as it basically gives you an alternative to typing `script/foo` or `.devkit/dk foo`: within the subshell you can just `dk foo`.
-
-To activate this in your project, add a `dk use: shell-console` line to your `.dkrc`, just like .devkit does.  Running `dk console` or `script/console` will then enter a subshell.
 
 ### Modules for Python-Using Projects
 
