@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Use cram and watch for testing, and provide a shell console
-dk use: cram reflex-watch shell-console bash32
+dk use: cram reflex-watch shell-console bash32 shellcheck
 
 on boot require mdsh           github bashup/mdsh      master bin/mdsh
 on boot require loco           github bashup/loco      master bin/loco
@@ -19,3 +19,10 @@ if [[ ! -x dk || dk.md -nt dk ]]; then
     on build exec "./dk" ${LOCO_ARGS[@]+"${LOCO_ARGS[@]}"}
     dk build
 fi
+
+# SC1090 = dynamic 'source' command
+# SC2016 = expressions in single quotes
+# SC2145 = prefix or suffix on "$@" or other array
+SHELLCHECK_OPTS='-x -e SC1090,SC2016,SC2145'
+
+on test dk shellcheck modules/*

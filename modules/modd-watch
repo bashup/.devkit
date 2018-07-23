@@ -7,7 +7,7 @@ dk.watch() {
 
 	# Trap SIGUSR1 to restart the watch with new configuration
 	event quote "$@"
-	trap "echo Configuration changed: restarting watch; echo; exec dk watch $REPLY" SIGUSR1
+	trap "echo Configuration changed: restarting watch; echo; exec dk watch ""$REPLY" SIGUSR1
 	export DEVKIT_PAGER=${DEVKIT_PAGER-pager.watch}     # Use the watch pager by default
 	event emit "before_watch" || echo "[$?]"            # Run any watch+ commands
 	isatty || export DEVKIT_ISATTY=0                    # reflex always runs w/pseudo-tty
@@ -49,12 +49,12 @@ __put-watch() {
 	local m="$1" patterns command
 
 	doubledash-split patterns command "${@:2}"
-	!((${#UNWATCH_PATTERNS[@]})) || patterns+=("${UNWATCH_PATTERNS[@]}")
+	! ((${#UNWATCH_PATTERNS[@]})) || patterns+=("${UNWATCH_PATTERNS[@]}")
 
-	!((${#patterns[@]})) || { pattern-quote "${patterns[@]}"; patterns=$REPLY; }
-	!((${#command[@]}))  || { event quote   "${command[@]}";  command=$REPLY; }
+	! ((${#patterns[@]})) || { pattern-quote "${patterns[@]}"; pattern=$REPLY; }
+	! ((${#command[@]}))  || { event quote   "${command[@]}";  command=$REPLY; }
 
-	printf '%s {\n\t%s %s\n}\n\n' "${patterns-}" "$m" "${command-}"
+	printf '%s {\n\t%s %s\n}\n\n' "${pattern-}" "$m" "${command-}"
 }
 
 doubledash-split() {
@@ -62,7 +62,7 @@ doubledash-split() {
 	while (($#)) && [[ $1 != -- ]]; do
 		eval "$__hd"'+=("$1")'; shift
 	done
-	!(($#)) || shift
+	! (($#)) || shift
 	eval "$__tl"'=("$@")'
 }
 

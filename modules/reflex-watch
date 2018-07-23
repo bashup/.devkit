@@ -5,7 +5,7 @@ dk.watch() {
 
 	# Trap SIGUSR1 to restart the watch with new configuration
 	event quote "$@"
-	trap "echo Configuration changed: restarting watch; echo; exec dk watch $REPLY" SIGUSR1
+	trap "echo Configuration changed: restarting watch; echo; exec dk watch ""$REPLY" SIGUSR1
 
 	export DEVKIT_PAGER=${DEVKIT_PAGER-pager.watch}     # Use the watch pager by default
 	event emit "before_watch" || echo "[$?]"            # Run any watch+ commands
@@ -23,7 +23,7 @@ watch() {
 
 parse-watch() {
 	# Parse `[globs...] [options...] command...`, converting globs to regexes
-	local re= RE= cmd=$1; shift
+	local re='' RE='' cmd=$1; shift
 	while (($#)) && [[ $1 != -* ]]; do
 		if [[ $1 == '!'* ]]; then
 			glob2re "${1:1}"
@@ -103,9 +103,9 @@ glob2re() {
 		case $c in
 		[!$^+.\(\)=!|?*]) re+=$c ;;
 		[$^+.\(\)=!|]) re+=\\$c ;;
-		"?") re+=[^/] ;;
+		"?") re+='[^/]' ;;
 		"*")
-			if [[ ${1:$i} =~ "**"(/|$) ]] && { ! ((i)) || [[ ${1:$i-1:1} == '/' ]]; }; then
+			if [[ ${1:$i} =~ [*][*](/|$) ]] && { ! ((i)) || [[ ${1:$i-1:1} == '/' ]]; }; then
 				re+='(([^/]*(/|$))*)'; i+=2   # skip '*/'
 			else re+='[^/]*'
 			fi

@@ -5,18 +5,15 @@ dk use: tty
 [[ -f .cramrc ]] || export CRAM="${CRAM-"--indent=4 --shell=bash --verbose"}"
 
 cram.files() { ls specs/*.cram.md; }
-cram.pager() { less -FRX; }
-if [[ ${TRAVIS-} == true ]] ; then cram.pager() { cat; } fi
 
-on test_files run cram_files
-on cram_files cram.files
-
-on test dk cram
+on "test_files" run cram_files
+on "cram_files" cram.files
+on "boot"       require cram install-cram
+on "test"       dk cram
 
 dk.cram() {
-    dk bootstrap;
-    require cram install-cram
-    IFS=$'\n' eval 'local cramfiles=($(run cram_files))'
+    local cramfiles=()
+    IFS=$'\n' read -rd '' -a cramfiles < <(run cram_files) || true
     for REPLY in ${cramfiles[@]+"${cramfiles[@]}"}; do
         [[ -s "$REPLY" ]] || abort "Empty file: $REPLY" 66 # EX_NOINPUT
     done
