@@ -279,9 +279,11 @@ The [composer](modules/composer) module provides `have-composer` and `require-co
 
 #### peridot
 
-The [peridot](modules/peridot) module defines a default `dk.test` function to provide a `script/test` command that runs [peridot-php](http://peridot-php.github.io/) on `specs/*.spec.php` and piping the result through `less -FR`.
+The [peridot](modules/peridot) module defines a `dk peridot` subcommand that is registered to run during `dk test` or `script/test`.  The command runs [peridot-php](http://peridot-php.github.io/) on the `specs` directory and pages the output if it doesn't fit on one screen.  (You can set `PERIDOT_SPECS` to a different directory if your tests aren't under `specs/`, and you can set `PERIDOT_OPTIONS` to pass extra options to peridot.)
 
-To change the files tested, redefine the  `peridot.files` function to emit a different list of files.  To change the pager, redefine `peridot.pager`.   To change the options, set `PERIDOT_OPTIONS` (after the `dk use: peridot`).
+The peridot module integrates with the entr-watch module by adding `$PERIDOT_SPECS/**/*.spec.php` to the watch files list.  (If you're using a different grep pattern, you'll want to redefine the `peridot.files` function accordingly.)
+
+To use this module, just `dk use: peridot` in your `.dkrc`.
 
 #### psysh-console
 

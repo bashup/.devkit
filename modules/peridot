@@ -1,20 +1,17 @@
 #!/usr/bin/env bash
 
-peridot.files() { ls specs/*.spec.php; }
-peridot.pager() { less -FR; }
-test.files() { peridot.files; }
+dk use: composer tty
 
-dk.test() { dk peridot; }
+peridot.files() { find "$PERIDOT_SPECS" -name '*.spec.php'; }
 
-export PERIDOT_OPTIONS=--force-colors
+on "test_files"    run peridot_files
+on "peridot_files" peridot.files
+on "test"          dk peridot
+on "bootstrap"     require-composer peridot peridot-php/peridot
+
+PERIDOT_SPECS=specs
 
 dk.peridot() {
-    dk bootstrap
-    dk use: composer
-    require-composer peridot peridot-php/peridot
-    IFS=$'\n' eval 'local specfiles=($(peridot.files))'
-    if (($#)); then
-         peridot "$@" "${specfiles[@]}"
-    else peridot ${PERIDOT_OPTIONS-} "${specfiles[@]}" | peridot.pager
-    fi
+	! isatty || set -- "--force-colors" "$@"
+	tty pager -- peridot ${PERIDOT_OPTIONS-} "$@" "${PERIDOT_SPECS}"
 }
