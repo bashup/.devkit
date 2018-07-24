@@ -26,3 +26,4 @@ fi
 SHELLCHECK_OPTS='-x -e SC1090,SC2016,SC2145'
 
 on test dk shellcheck modules/*
+on test eval 'dk shellcheck /dev/stdin < <(mdsh --compile dk.md)'

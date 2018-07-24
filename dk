@@ -21,34 +21,34 @@
 
 #!/usr/bin/env bash
 
-realpath.location() { realpath.follow "$1"; realpath.absolute "$REPLY" ".."; }
-realpath.resolved() { realpath.follow "$1"; realpath.absolute "$REPLY"; }
-realpath.dirname()  { if [[ $1 =~ /+[^/]+/*$ ]]; then REPLY="${1%${BASH_REMATCH}}"; REPLY=${REPLY:-/}; else REPLY=.; fi }
-realpath.basename() { if [[ $1 =~ /*([^/]+)/*$ ]]; then REPLY="${BASH_REMATCH[1]}"; else REPLY=/; fi }
+realpath.location(){ realpath.follow "$1"; realpath.absolute "$REPLY" ".."; }
+realpath.resolved(){ realpath.follow "$1"; realpath.absolute "$REPLY"; }
+realpath.dirname() { if [[ $1 =~ /+[^/]+/*$ ]]; then REPLY="${1%${BASH_REMATCH[0]}}"; REPLY=${REPLY:-/}; else REPLY=.; fi }
+realpath.basename(){ if [[ $1 =~ /*([^/]+)/*$ ]]; then REPLY="${BASH_REMATCH[1]}"; else REPLY=/; fi }
 
 realpath.follow() {
 	local target
 	while [[ -L "$1" ]] && target=$(readlink -- "$1"); do
 		realpath.dirname "$1"
-		# Resolve symlink target relative to symlink's directory
+		# Resolve relative to symlink's directory
 		[[ $REPLY != . && $target != /* ]] && REPLY=$REPLY/$target || REPLY=$target
 		# Break out if we found a symlink loop
 		for target; do [[ $REPLY == "$target" ]] && break 2; done
-		# Add current result to the loop-detect list and tail-recurse
+		# Add to the loop-detect list and tail-recurse
 		set -- "$REPLY" "$@"
 	done
 	REPLY="$1"
 }
 
 realpath.absolute() {
-	REPLY=$PWD; local no_eg; shopt -q extglob || { no_eg=y; shopt -s extglob; }
+	REPLY=$PWD; local eg=extglob; ! shopt -q $eg || eg=; ${eg:+shopt -s $eg}
 	while (($#)); do case $1 in
 		/*) REPLY=/; set -- "${1##+(/)}" "${@:2}" ;;
 		*/*) set -- "${1%%/*}" "${1##${1%%/*}+(/)}" "${@:2}" ;;
 		''|.) shift ;;
 		..) realpath.dirname "$REPLY"; shift ;;
 		*) REPLY="${REPLY%/}/$1"; shift ;;
-	esac; done; ${no_eg:+shopt -u extglob}
+	esac; done; ${eg:+shopt -u $eg}
 }
 
 realpath.canonical() {
@@ -73,7 +73,7 @@ realpath.relative() {
 set -euo pipefail
 
 fn_exists() { declare -F -- "$1"; } >/dev/null
-fn_copy()   { REPLY="$(declare -f $1)"; eval "$2 ${REPLY#$1}"; }
+fn_copy()   { REPLY="$(declare -f "$1")"; eval "$2 ${REPLY#$1}"; }
 findup()    { walkup "${1:-$PWD}" reply_if_exists "${@:2}"; }
 
 reply_if_exists() {
@@ -112,6 +112,7 @@ _loco_do() {
 }
 
 _loco_findproject() {
+    # shellcheck disable=SC2015  # plain var assign can't be false
     findup "$LOCO_PWD" "${LOCO_FILE[@]}" && LOCO_PROJECT=$REPLY ||
         loco_error "Can't find $LOCO_FILE here";
 }
@@ -125,6 +126,7 @@ _loco_user_config() { source "$1"; }
 
 # Find our configuration, exposing relevant paths and defaults
 
+# shellcheck disable=SC2034  # some vars are only used by extending scripts
 _loco_config() {
     LOCO_ARGS=("$@")
     loco_preconfig "$@"
@@ -145,7 +147,7 @@ _loco_config() {
 
 _loco_main() {
     loco_config "$@"
-    fn_exists $LOCO_NAME || eval "$LOCO_NAME() { loco_do \"\$@\"; }"
+    fn_exists "$LOCO_NAME" || eval "$LOCO_NAME() { loco_do \"\$@\"; }"
     ${LOCO_PROJECT:+:} loco_findproject "$@"
     ${LOCO_ROOT:+:}    loco_findroot "$@"
     loco_loadproject "$LOCO_PROJECT"
@@ -158,35 +160,35 @@ for f in $(compgen -A function _loco_); do
 done
 
 # Clear all LOCO_*  variables before beginning
-for lv in ${!LOCO_@}; do unset $lv; done
+for lv in ${!LOCO_@}; do unset "$lv"; done
 
 LOCO_SCRIPT=$0
 #!/usr/bin/env bash
 event(){ case $1 in error|quote|encode);; *)
-	__ev.encode "${2-}";local f n= e=bashup_event_$REPLY;f=${e/event/flag}
+	__ev.encode "${2-}";local f n='' e=bashup_event_$REPLY;f=${e/event/flag}
 	case $1 in emit) shift;${!f-};eval "${!e-}"; return ;;on|once|off|has)
-		case "${3-}" in @_) n='$#';; @*[^0-9]*);; @[0-9]*) n=${3#@};; esac; ${n:+
+		case "${3-}" in @_) n='$#';; @*[^0-9]*);; @[0-9]*) n=$((${3#@}));; esac; ${n:+
 		set -- "$1" "$2" "${@:4}" }
 		case $1/$# in
-			has/[12]) REPLY=;; */[12]) set error "${2-}: missing callback";;
-			*) __ev.quote "${@:3}";! ((${n/\$#/1}))||REPLY+=' "${@:2:'"$n"'}"';REPLY+=$'\n'
+			has/[12]) REPLY=;; */[12]) set -- error "${2-}: missing callback";;
+			*) __ev.quote "${@:3}";((${n/\$#/1}))&&REPLY+=' "${@:2:'"$n"'}"';REPLY+=$'\n'
 		esac
 	esac
 esac ;__ev."$@";}
-__ev.error(){ echo "$1">&2;return ${2:-64};}
-__ev.quote(){ REPLY=; printf -v REPLY "${@+ %q}" "${@-}"; REPLY=${REPLY# };}
+__ev.error(){ echo "$1">&2;return "${2:-64}";}
+__ev.quote(){ REPLY=; ${@+printf -v REPLY ' %q' "$@"}; REPLY=${REPLY# };}
 __ev.has(){ [[ ${!e-} && $'\n'"${!e}" == *$'\n'"$REPLY"* && ! ${!f-} ]];}
-__ev.on(){ __ev.has && return;[[ ! ${!f-} ]]&&eval $e+='$REPLY'||eval "${!e-};$REPLY";}
-__ev.off(){ __ev.has||return 0; n="${!e}"; n=${n#"$REPLY"}; eval $e=$'"${n//\n"$REPLY"/\n}"';}
+__ev.on(){ __ev.has && return;if [[ ! ${!f-} ]];then eval "$e"+='$REPLY';else eval "${!e-};$REPLY";fi;}
+__ev.off(){ __ev.has||return 0; n="${!e}"; n=${n#"$REPLY"}; eval "$e"=$'"${n//\n"$REPLY"/\n}"';}
 __ev.fire(){ ${!f-};set -- "$e" "${@:2}"; while [[ ${!1-} ]];do eval "$1=;${!1}"; done ;}
 __ev.all(){ ${!f-};e=${!e-};eval "${e//$'\n'/||return; }";}
 __ev.any(){ ${!f-};e=${!e-};eval "${e//$'\n'/&&return|| } ! :";}
 __ev.resolve(){
 	${!f-};__ev.fire "$@";__ev.quote "$@"
-	readonly $f="eval __ev.error 'event \"'$1'\" already resolved' 70;return" $e="set -- $REPLY"
+	readonly "$f=eval __ev.error 'event \"'$1'\" already resolved' 70;return" "$e=set -- $REPLY"
 }
 __ev.resolved(){ [[ ${!f-} ]];}
-__ev.once(){ n=${n:-0} n=${n/\$#/_}; event on "$1" @$n __ev_once $# @$n "$@";}
+__ev.once(){ n=${n:-0} n=${n/\$#/_}; event on "$1" "@$n" __ev_once $# "@$n" "$@";}
 __ev_once(){ event off "$3" "$2" __ev_once "${@:1:$1+2}"; "${@:4}";}
 __ev_jit(){
 	local r=${__ev_jit-} s=$1;((${#r}<250))||__ev_jit=
@@ -235,7 +237,7 @@ undefined-command() {
     fi
 }
 
-abort()    { log "$1"; exit $2; }
+abort()    { log "$1"; exit "$2"; }
 log()      { echo "$1" >&2; }
 basher() {
     require basher github basherpm/basher master bin/basher
@@ -303,9 +305,9 @@ dk.use:() {
     done
 }
 loco_preconfig() {
-    LOCO_SCRIPT=$BASH_SOURCE
+    LOCO_SCRIPT=${BASH_SOURCE[0]}
     LOCO_COMMAND=dk
-    LOCO_FILE=.dkrc
+    LOCO_FILE=(.dkrc)
 }
 
 loco_findroot() {
@@ -313,7 +315,7 @@ loco_findroot() {
     _loco_findroot "$@"
     export DEVKIT_ROOT=$LOCO_ROOT DEVKIT_HOME=$LOCO_ROOT/.devkit
     realpath.canonical "$DEVKIT_HOME/dk"; proj_dk=$REPLY
-    realpath.canonical "$BASH_SOURCE"; this_dk=$REPLY
+    realpath.canonical "${BASH_SOURCE[0]}"; this_dk=$REPLY
     [[ "$proj_dk" == "$this_dk" || ! -x "$proj_dk" ]] || exec "$proj_dk" "$@";
 }
 
@@ -325,7 +327,7 @@ loco_loadproject() {
         abort "Your .envrc must define a *local* installation of basher!" 78 # EX_CONFIG
 
     require dk linkbin "$DEVKIT_HOME/dk"   # make sure there's a local dk
-    $LOCO_LOAD "$1"
+    source "$1"
 }
 loco_site_config() { :; }
 loco_user_config() { :; }

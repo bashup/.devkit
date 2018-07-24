@@ -87,7 +87,7 @@ undefined-command() {
     fi
 }
 
-abort()    { log "$1"; exit $2; }
+abort()    { log "$1"; exit "$2"; }
 log()      { echo "$1" >&2; }
 ```
 
@@ -210,9 +210,9 @@ We override loco's configuration process in a few ways: first, our command name/
 
 ```shell
 loco_preconfig() {
-    LOCO_SCRIPT=$BASH_SOURCE
+    LOCO_SCRIPT=${BASH_SOURCE[0]}
     LOCO_COMMAND=dk
-    LOCO_FILE=.dkrc
+    LOCO_FILE=(.dkrc)
 }
 
 loco_findroot() {
@@ -220,7 +220,7 @@ loco_findroot() {
     _loco_findroot "$@"
     export DEVKIT_ROOT=$LOCO_ROOT DEVKIT_HOME=$LOCO_ROOT/.devkit
     realpath.canonical "$DEVKIT_HOME/dk"; proj_dk=$REPLY
-    realpath.canonical "$BASH_SOURCE"; this_dk=$REPLY
+    realpath.canonical "${BASH_SOURCE[0]}"; this_dk=$REPLY
     [[ "$proj_dk" == "$this_dk" || ! -x "$proj_dk" ]] || exec "$proj_dk" "$@";
 }
 
@@ -232,7 +232,7 @@ loco_loadproject() {
         abort "Your .envrc must define a *local* installation of basher!" 78 # EX_CONFIG
 
     require dk linkbin "$DEVKIT_HOME/dk"   # make sure there's a local dk
-    $LOCO_LOAD "$1"
+    source "$1"
 }
 ```
 
