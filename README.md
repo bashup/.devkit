@@ -144,6 +144,10 @@ You can then override the module's defaults by defining new functions.
 
 For example, if you wanted to change the files to be processed by cram, you can redefine the `cram.files` function, and to change the pager, redefine the `cram.pager` function.  To change the cram options, set the `CRAM` environment variable, or add a `.cramrc` file to your project.
 
+As long as you run cram via `script/test`, `dk test`, or `dk cram`, you can place files named `cram-setup.sh` in your test directories, and they will be silently sourced at the start of each test file.  Any functions or variables you define will then be available for your tests, and the setup file can access any cram environment variables (e.g. `$TESTDIR` and `$TESTFILE`).  Setup files should not produce any output, or they will break the corresponding tests.
+
+Setup files can source other shell files, including other directories' `cram-setup.sh` files if you need to share setup between directories (e.g. `source "$TESTDIR/../cram-setup.sh"` to source and extend a parent directory's setup).  You can also just symlink from one cram-setup.sh to another.
+
 #### dotenv
 
 The [dotenv](modules/dotenv) module sources a local clone of the [bashup/dotenv](https://github.com/bashup/dotenv/) tool for manipulating .env files in [docker-compose format](https://docs.docker.com/compose/compose-file/#env_file).  After a `dk use: dotenv`, the rest of your `.dkrc` can use the `.env` function to read, edit, and set defaults in `.env` files -- perfect for project setup scripts or other commands that need configuration.

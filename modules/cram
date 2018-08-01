@@ -1,15 +1,25 @@
 #!/usr/bin/env bash
+if [[ ${BASH_ENV-} == "${BASH_SOURCE[0]}" ]]; then   # being run as BASH_ENV
+	if [[ ${TESTDIR-} && ${TESTFILE-} ]]; then       # about to run a test
+		unset BASH_ENV                               # don't run in subshells
+		if [[ -f "$TESTDIR/cram-setup.sh" ]]; then   # test has a setup script?
+			source "$TESTDIR/cram-setup.sh"          # load it
+		fi
+	fi
+	return  # continue shell execution
+fi
 
 dk use: tty
-
 [[ -f .cramrc ]] || export CRAM="${CRAM-"--indent=4 --shell=bash --verbose"}"
 
 cram.files() { ls specs/*.cram.md; }
+cram.setupfiles() { [[ ! -d specs ]] || find specs -name cram-setup.sh; }
 
-on "test_files" run cram_files
-on "cram_files" cram.files
-on "boot"       require cram install-cram
-on "test"       dk cram
+on "test_files"  run cram_files
+on "watch_files" cram.setupfiles
+on "cram_files"  cram.files
+on "boot"        require cram install-cram
+on "test"        dk cram
 
 dk.cram() {
     local cramfiles=()
@@ -17,7 +27,8 @@ dk.cram() {
     for REPLY in ${cramfiles[@]+"${cramfiles[@]}"}; do
         [[ -s "$REPLY" ]] || abort "Empty file: $REPLY" 66 # EX_NOINPUT
     done
-    tty pager slurpify diffcolor -- cram "$@" ${cramfiles[@]+"${cramfiles[@]}"}
+    tty pager slurpify diffcolor -- env BASH_ENV="${BASH_SOURCE[0]}" \
+        cram "$@" ${cramfiles[@]+"${cramfiles[@]}"}
 }
 
 install-cram() {
