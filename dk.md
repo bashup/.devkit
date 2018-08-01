@@ -13,12 +13,13 @@
 
 # dk - the devkit CLI
 
-`dk` is a specialized version of [loco](https://github.com/bashup/loco), that uses a `.dkrc` file to designate the project directory, define commands, etc.  It extends loco to:
+`dk` is a specialized version of [loco](https://github.com/bashup/loco), that uses a `.dkrc` file to designate the project directory, define commands, etc.  It extends loco to provide:
 
-* provide skeleton implementations of [Scripts to Rule Them All](https://githubengineering.com/scripts-to-rule-them-all/) commands
-* provide a self-installing, local [basher](https://github/basherpm/basher) instance for installing dependencies
-* provide various convenience functions for detecting and fetching dependencies
-* provide a  `use:` command that loads .devkit modules (by sourcing them at most once)
+* skeleton implementations of [Scripts to Rule Them All](https://githubengineering.com/scripts-to-rule-them-all/) commands, as `dk` subcommands
+* an event-driven framework for fleshing out those skeletons
+* a self-installing, local [basher](https://github/basherpm/basher) instance for installing dependencies
+* various convenience functions for detecting and fetching dependencies
+* a  `use:` command that loads .devkit modules (by sourcing them at most once)
 
 ### Contents
 
@@ -36,59 +37,78 @@
 
 <!-- tocstop -->
 
-## Event Handling
+## Subcommands and Events
 
-Define some shorthand for common tasks:
+dk subcommands like `setup`, `test`, `watch`, etc. are all run using the bashup/events library.  When a subcommand `X` is invoked, dk first emits a `before_X` event, then looks for:
 
-```shell
-on() { event on "$@"; }
-before() { event on "before_$@"; }
-after()  { event on "after_$@"; }
-emit() { event emit "$@"; }
-run() { emit "before_$@"; emit "$@"; emit "after_$@"; }
-```
+* Listeners on an event named `X`
+* Listeners on an event named `default_X`
+* A function named `dk.X`
 
-## Scripts To Rule Them All
-
-dk provides skeletons for all the "Scripts to Rule Them All" commands, which can be overridden in the project's `.dkrc` file.  The defaults all do nothing, or abort with an error message, but `dk use:` ing other devkit modules or redefining the functions can change that:
+The found listeners or function are then invoked, followed by an `after_X` event (assuming the previous events or function returned success).  If no function or listeners were found, an `undefined-command` subcommand is run, whose default implementation is to abort with an error message.
 
 ```shell
-command-event() { event has "$1" || undefined-command "$1"; run "$@"; }
+run() {
+	if event has "$1"; then
+		event emit "before_$@"
+		event emit "$@"
+	elif event has "default_$1"; then
+		event emit "before_$@"
+		event emit "default_$@"
+	elif fn_exists "dk.$1"; then
+		event emit "before_$@"
+		"dk.$@"
+	else
+		run "undefined-command" "$@"
+		return
+	fi
+	event emit "after_$@"
+}
 
-dk.bootstrap() { event fire "boot"; }  # only run bootstrap callbacks once, can be no-op
-
-# default commands
-for REPLY in setup update build cibuild server test console clean files_changed; do
-    eval "dk.$REPLY() { command-event $REPLY \"\$@\"; }"
-    event once "before_$REPLY" dk bootstrap    # start everything with bootstrap
-done
-
-# Setup and update are ok as no-ops
-on "default_setup"  :
-on "default_update" :
-
-# Test before build and cibuild
-before "cibuild" dk test
-before "build"   dk test
-
-# Cleanup
-clean_deps() { [[ "$BASHER_PREFIX" == "$PWD/.deps" ]] && rm -rf "$BASHER_PREFIX"; }
-
-event off "before_clean" dk bootstrap   # don't bootstrap during clean
-on    "clean" clean_deps
-after "clean" hash -r
-after "clean" linkbin .devkit/dk
-
-undefined-command() {
-    if event has "default_$1"; then
-        emit "before_$@"; emit "default_$@"; emit "after_$@";
-    else
-        abort "This project does not have a $1 command defined." 69   # EX_UNAVAILABLE
-    fi
+dk.undefined-command() {
+	abort "This project does not have a $1 command defined." 69   # EX_UNAVAILABLE
 }
 
 abort()    { log "$1"; exit "$2"; }
 log()      { echo "$1" >&2; }
+```
+
+To make .dkrc files more compact, and clearer in intent, we also define some shorthand functions for registering or unregistering event handlers, and before/after events:
+
+```shell
+on() { event on "$@"; }
+off() { event off "$@"; }
+
+before() { event on "before_$@"; }
+after()  { event on "after_$@"; }
+```
+
+## Scripts To Rule Them All
+
+dk provides skeletons for all the "Scripts to Rule Them All" commands, which can be overridden in the project's `.dkrc` file.  The defaults mostly do nothing, or abort with an error message, but `dk use:` ing other devkit modules or redefining the functions can change that.  A few commands are given no-op default implementations, but most must have event listeners registered or functions defined in order to work.
+
+```shell
+# Commands that should have a bootstrap first:
+for REPLY in setup update build cibuild dist server test console watch; do
+    event once "before_$REPLY" dk bootstrap    # start everything but clean with bootstrap
+done
+
+# Commands that are ok as no-ops:
+for REPLY in setup update bootstrap test_files; do
+	on "default_$REPLY" :  # no-op
+done
+
+# Commands that should have tests run first:
+for REPLY in build dist; do
+	before "$REPLY" dk test
+done
+
+# Cleanup
+clean-deps() { [[ "$BASHER_PREFIX" == "$PWD/.deps" ]] && rm -rf "$BASHER_PREFIX"; }
+
+on    "clean" clean-deps
+after "clean" hash -r
+after "clean" linkbin .devkit/dk
 ```
 
 ## Dependency Management Functions
@@ -233,12 +253,22 @@ loco_loadproject() {
 
     require dk linkbin "$DEVKIT_HOME/dk"   # make sure there's a local dk
     source "$1"
+    event fire "boot"  # Run boot event as soon as soon as we're finished loading
 }
+
 ```
 
-We also disable sitewide and user config files, because using them goes against devkit's goal of *self-containment*: it shouldn't be necessary for a user to change or install global things to work on your project.
+We also disable sitewide and user config files, because using them goes against devkit's goal of *self-containment*: it shouldn't be necessary for a user to change or install global things to work on your project.  Last, but not least, we override loco's command dispatcher to use our `run` function, as long as there's at least one argument on the command line, and it's not empty.
 
 ```shell
 loco_site_config() { :; }
 loco_user_config() { :; }
+
+loco_do() {
+	if [[ "${1-}" ]]; then
+		run "$@"  # try to run the event or function, plus before+after events
+	else
+		_loco_do "$@"  # empty subcommand, let loco abort w/error message
+	fi
+}
 ```

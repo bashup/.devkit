@@ -198,47 +198,55 @@ __ev_jit(){
 	eval '__ev.encode(){ local LC_ALL=C;REPLY=${1//_/__};'\
 	"${__ev_jit-}"' [[ $REPLY != *[^_[:alnum:]]* ]] || __ev_jit "${REPLY//[_[:alnum:]]/}";}'
 };__ev_jit ''
-on() { event on "$@"; }
-before() { event on "before_$@"; }
-after()  { event on "after_$@"; }
-emit() { event emit "$@"; }
-run() { emit "before_$@"; emit "$@"; emit "after_$@"; }
-command-event() { event has "$1" || undefined-command "$1"; run "$@"; }
+run() {
+	if event has "$1"; then
+		event emit "before_$@"
+		event emit "$@"
+	elif event has "default_$1"; then
+		event emit "before_$@"
+		event emit "default_$@"
+	elif fn_exists "dk.$1"; then
+		event emit "before_$@"
+		"dk.$@"
+	else
+		run "undefined-command" "$@"
+		return
+	fi
+	event emit "after_$@"
+}
 
-dk.bootstrap() { event fire "boot"; }  # only run bootstrap callbacks once, can be no-op
-
-# default commands
-for REPLY in setup update build cibuild server test console clean files_changed; do
-    eval "dk.$REPLY() { command-event $REPLY \"\$@\"; }"
-    event once "before_$REPLY" dk bootstrap    # start everything with bootstrap
-done
-
-# Setup and update are ok as no-ops
-on "default_setup"  :
-on "default_update" :
-
-# Test before build and cibuild
-before "cibuild" dk test
-before "build"   dk test
-
-# Cleanup
-clean_deps() { [[ "$BASHER_PREFIX" == "$PWD/.deps" ]] && rm -rf "$BASHER_PREFIX"; }
-
-event off "before_clean" dk bootstrap   # don't bootstrap during clean
-on    "clean" clean_deps
-after "clean" hash -r
-after "clean" linkbin .devkit/dk
-
-undefined-command() {
-    if event has "default_$1"; then
-        emit "before_$@"; emit "default_$@"; emit "after_$@";
-    else
-        abort "This project does not have a $1 command defined." 69   # EX_UNAVAILABLE
-    fi
+dk.undefined-command() {
+	abort "This project does not have a $1 command defined." 69   # EX_UNAVAILABLE
 }
 
 abort()    { log "$1"; exit "$2"; }
 log()      { echo "$1" >&2; }
+on() { event on "$@"; }
+off() { event off "$@"; }
+
+before() { event on "before_$@"; }
+after()  { event on "after_$@"; }
+# Commands that should have a bootstrap first:
+for REPLY in setup update build cibuild dist server test console watch; do
+    event once "before_$REPLY" dk bootstrap    # start everything but clean with bootstrap
+done
+
+# Commands that are ok as no-ops:
+for REPLY in setup update bootstrap test_files; do
+	on "default_$REPLY" :  # no-op
+done
+
+# Commands that should have tests run first:
+for REPLY in build dist; do
+	before "$REPLY" dk test
+done
+
+# Cleanup
+clean-deps() { [[ "$BASHER_PREFIX" == "$PWD/.deps" ]] && rm -rf "$BASHER_PREFIX"; }
+
+on    "clean" clean-deps
+after "clean" hash -r
+after "clean" linkbin .devkit/dk
 basher() {
     require basher github basherpm/basher master bin/basher
     "$BASHER_INSTALL_BIN/basher" "$@"
@@ -328,7 +336,17 @@ loco_loadproject() {
 
     require dk linkbin "$DEVKIT_HOME/dk"   # make sure there's a local dk
     source "$1"
+    event fire "boot"  # Run boot event as soon as soon as we're finished loading
 }
+
 loco_site_config() { :; }
 loco_user_config() { :; }
+
+loco_do() {
+	if [[ "${1-}" ]]; then
+		run "$@"  # try to run the event or function, plus before+after events
+	else
+		_loco_do "$@"  # empty subcommand, let loco abort w/error message
+	fi
+}
 if [[ $0 == "${BASH_SOURCE-}" ]]; then loco_main "$@"; fi
