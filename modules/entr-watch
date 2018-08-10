@@ -6,13 +6,14 @@ dk.watch() {
     require-any entr abort "Please install entr (http://entrproject.org/) to watch files" 69
     require-any tput
     (($#)) || set -- dk files_changed # default to firing `files_changed` events
-    if watch.files | entr-watch "$@"; (($?==2)); then
+    if run watch_files | entr-watch "$@"; (($?==2)); then
         exec dk watch "$@"
     fi
     stty echo
 }
 
 on "default_files_changed" dk test
+on "watch_files" watch.files
 
 watch.files() {
     { run test_files; ls; } | grep -v '\.md\.err$'
