@@ -47,7 +47,7 @@ dk subcommands like `setup`, `test`, `watch`, etc. are all run using the bashup/
 
 The found listeners or function are then invoked, followed by an `after_X` event (assuming the previous events or function returned success).  If no function or listeners were found, an `undefined-command` subcommand is run, whose default implementation is to abort with an error message.
 
-If a command `X` is registered via `paged-command X`, it and its events will run in a subshell, piped through `DEVKIT_PAGER` (or `less -FRX`), assuming stdout is a TTY.  By default, only the `test` command is paged.
+If a command `X` is registered via `paged-command X`, it and its events will run in a subshell, piped through `DEVKIT_PAGER` (or `less -FRX`), assuming stdout is a TTY and the command isn't already being paged.  (By default, only the `test` command is paged.)
 
 ```shell
 run() {
