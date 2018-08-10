@@ -21,13 +21,15 @@ on "cram_files"  cram.files
 on "boot"        require cram install-cram
 on "test"        dk cram
 
+paged-command cram
+
 dk.cram() {
     local cramfiles=()
     IFS=$'\n' read -rd '' -a cramfiles < <(run cram_files) || true
     for REPLY in ${cramfiles[@]+"${cramfiles[@]}"}; do
         [[ -s "$REPLY" ]] || abort "Empty file: $REPLY" 66 # EX_NOINPUT
     done
-    tty pager slurpify diffcolor -- env BASH_ENV="${BASH_SOURCE[0]}" \
+    tty slurpify diffcolor -- env BASH_ENV="${BASH_SOURCE[0]}" \
         cram "$@" ${cramfiles[@]+"${cramfiles[@]}"}
 }
 

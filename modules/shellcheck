@@ -7,6 +7,8 @@ have-any shellcheck || shellcheck() {
 }
 
 dk.shellcheck() {
-	dk use: tty; ! isatty || set -- "-Calways" "$@"
-	tty pager -- shellcheck "$@"
+	! isatty || set -- "-Calways" "$@"
+	shellcheck "$@"
 }
+
+paged-command shellcheck

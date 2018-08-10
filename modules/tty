@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-jq() { if pager; then command jq -C "$@" | $REPLY; else command jq "$@"; fi; }
+jq() { ! isatty || set -- "-C" "$@"; tty pager -- command jq "$@"; }
 
-pager() { tty-tool PAGER less -FRX; }
+pager() { set -- "${tty_prefix-DEVKIT_}IS_PAGING"; [[ ! ${!1-} ]] && tty-tool PAGER less -FRX; }
 
 pager.screenfull() { require-any tput; head -n $(( $(tput lines) - ${1-2} )); }
 pager.watch()      { clear; date; echo; pager.screenfull 4; }
@@ -32,4 +32,9 @@ tty() {
 	done
 	event quote "${@:2}"
 	eval "$REPLY $pipe"
+}
+
+with-pager() {
+	! isatty || set -- "${tty_prefix-DEVKIT_}ISATTY=1" "$@"
+	tty pager -- "${tty_prefix-DEVKIT_}PAGER=cat" "PAGER=cat" "${tty_prefix-DEVKIT_}IS_PAGING=yes" "$@"
 }

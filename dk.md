@@ -47,9 +47,15 @@ dk subcommands like `setup`, `test`, `watch`, etc. are all run using the bashup/
 
 The found listeners or function are then invoked, followed by an `after_X` event (assuming the previous events or function returned success).  If no function or listeners were found, an `undefined-command` subcommand is run, whose default implementation is to abort with an error message.
 
+If a command `X` is registered via `paged-command X`, it and its events will run in a subshell, piped through `DEVKIT_PAGER` (or `less -FRX`), assuming stdout is a TTY.  By default, only the `test` command is paged.
+
 ```shell
 run() {
-	if event has "$1"; then
+	if [[ ! ${DEVKIT_IS_PAGING-} ]] && event has "before_$1" paged-command; then
+		dk use: tty
+		with-pager run "$@"
+		return
+	elif event has "$1"; then
 		event emit "before_$@"
 		event emit "$@"
 	elif event has "default_$1"; then
@@ -71,9 +77,12 @@ dk.undefined-command() {
 
 abort()    { log "$1"; exit "$2"; }
 log()      { echo "$1" >&2; }
+
+paged-command() { while (($#)); do before "$1" paged-command; shift; done; }
+
 ```
 
-To make .dkrc files more compact, and clearer in intent, we also define some shorthand functions for registering or unregistering event handlers, and before/after events:
+To make .dkrc files more compact, and clearer in intent, we also define some shorthand functions for registering or unregistering event handlers, and before/after events.  We also register an `EXIT` trap that fires an `EXIT` event, so that multiple exit handlers can safely be registered.
 
 ```shell
 on() { event on "$@"; }
@@ -81,6 +90,9 @@ off() { event off "$@"; }
 
 before() { event on "before_$@"; }
 after()  { event on "after_$@"; }
+
+trap 'event emit "EXIT"' EXIT
+
 ```
 
 ## Scripts To Rule Them All
@@ -103,12 +115,16 @@ for REPLY in build dist; do
 	before "$REPLY" dk test
 done
 
+# Commands whose output should be paged
+paged-command test
+
 # Cleanup
 clean-deps() { [[ "$BASHER_PREFIX" == "$PWD/.deps" ]] && rm -rf "$BASHER_PREFIX"; }
 
 on    "clean" clean-deps
 after "clean" hash -r
 after "clean" linkbin .devkit/dk
+
 ```
 
 ## Dependency Management Functions

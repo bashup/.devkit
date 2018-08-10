@@ -14,5 +14,7 @@ PERIDOT_SPECS=specs
 dk.peridot() {
 	! isatty || export PERIDOT_TTY=1
 	# shellcheck disable=SC2086  # set -f disables globs, and we WANT word splitting
-	(set -f; tty pager -- peridot ${PERIDOT_OPTIONS-} "$@" "$PERIDOT_SPECS")
+	(set -f; peridot ${PERIDOT_OPTIONS-} "$@" "$PERIDOT_SPECS")
 }
+
+paged-command peridot

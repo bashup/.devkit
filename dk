@@ -199,7 +199,11 @@ __ev_jit(){
 	"${__ev_jit-}"' [[ $REPLY != *[^_[:alnum:]]* ]] || __ev_jit "${REPLY//[_[:alnum:]]/}";}'
 };__ev_jit ''
 run() {
-	if event has "$1"; then
+	if [[ ! ${DEVKIT_IS_PAGING-} ]] && event has "before_$1" paged-command; then
+		dk use: tty
+		with-pager run "$@"
+		return
+	elif event has "$1"; then
 		event emit "before_$@"
 		event emit "$@"
 	elif event has "default_$1"; then
@@ -221,11 +225,17 @@ dk.undefined-command() {
 
 abort()    { log "$1"; exit "$2"; }
 log()      { echo "$1" >&2; }
+
+paged-command() { while (($#)); do before "$1" paged-command; shift; done; }
+
 on() { event on "$@"; }
 off() { event off "$@"; }
 
 before() { event on "before_$@"; }
 after()  { event on "after_$@"; }
+
+trap 'event emit "EXIT"' EXIT
+
 # Commands that should have a bootstrap first:
 for REPLY in setup update build cibuild dist server test console watch; do
     event once "before_$REPLY" dk bootstrap    # start everything but clean with bootstrap
@@ -241,12 +251,16 @@ for REPLY in build dist; do
 	before "$REPLY" dk test
 done
 
+# Commands whose output should be paged
+paged-command test
+
 # Cleanup
 clean-deps() { [[ "$BASHER_PREFIX" == "$PWD/.deps" ]] && rm -rf "$BASHER_PREFIX"; }
 
 on    "clean" clean-deps
 after "clean" hash -r
 after "clean" linkbin .devkit/dk
+
 basher() {
     require basher github basherpm/basher master bin/basher
     "$BASHER_INSTALL_BIN/basher" "$@"
