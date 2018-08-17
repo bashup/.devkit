@@ -206,12 +206,12 @@ run() {
 	elif event has "$1"; then
 		event emit "before_$@"
 		event emit "$@"
-	elif event has "default_$1"; then
-		event emit "before_$@"
-		event emit "default_$@"
 	elif fn_exists "dk.$1"; then
 		event emit "before_$@"
 		"dk.$@"
+	elif event has "default_$1"; then
+		event emit "before_$@"
+		event emit "default_$@"
 	else
 		run "undefined-command" "$@"
 		return

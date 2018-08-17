@@ -42,8 +42,8 @@
 dk subcommands like `setup`, `test`, `watch`, etc. are all run using the bashup/events library.  When a subcommand `X` is invoked, dk first emits a `before_X` event, then looks for:
 
 * Listeners on an event named `X`
-* Listeners on an event named `default_X`
 * A function named `dk.X`
+* Listeners on an event named `default_X`
 
 The found listeners or function are then invoked, followed by an `after_X` event (assuming the previous events or function returned success).  If no function or listeners were found, an `undefined-command` subcommand is run, whose default implementation is to abort with an error message.
 
@@ -58,12 +58,12 @@ run() {
 	elif event has "$1"; then
 		event emit "before_$@"
 		event emit "$@"
-	elif event has "default_$1"; then
-		event emit "before_$@"
-		event emit "default_$@"
 	elif fn_exists "dk.$1"; then
 		event emit "before_$@"
 		"dk.$@"
+	elif event has "default_$1"; then
+		event emit "before_$@"
+		event emit "default_$@"
 	else
 		run "undefined-command" "$@"
 		return
