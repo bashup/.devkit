@@ -2,6 +2,13 @@
 
 jq-tty() { if isatty; then tty pager -- command jq  -C "$@"; else command jq "$@"; fi; }
 
+colorize-json()  { tty-tool       JSON_COLOR jq -C . || tty-pygmentize JSON_COLOR json; }
+colorize-yaml()  { tty-pygmentize YAML_COLOR yaml; }
+colorize-ini()   { tty-pygmentize INI_COLOR  ini; }
+colorize-toml()  { tty-pygmentize TOML_COLOR ini; }
+colorize-php()   { tty-pygmentize PHP_COLOR  php; }
+tty-pygmentize() { tty-tool "$1" pygmentize -f 256 -O style=igor -l "$2"; }
+
 pager() { set -- "${tty_prefix-DEVKIT_}IS_PAGING"; [[ ! ${!1-} ]] && tty-tool PAGER less -FRX; }
 
 pager.screenfull() { require-any tput; head -n $(( $(tput lines) - ${1-2} )); }
