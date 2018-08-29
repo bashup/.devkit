@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-jq() { ! isatty || set -- "-C" "$@"; tty pager -- command jq "$@"; }
+jq() { if isatty; then tty pager -- command jq  -C "$@"; else command jq "$@"; fi; }
 
 pager() { set -- "${tty_prefix-DEVKIT_}IS_PAGING"; [[ ! ${!1-} ]] && tty-tool PAGER less -FRX; }
 
