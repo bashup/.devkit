@@ -1,15 +1,12 @@
 #!/usr/bin/env bash
 
 # Use cram and watch for testing, and provide a shell console
-dk use: cram reflex-watch shell-console bash32 shellcheck
+dk use: cram modd-watch shell-console bash32 shellcheck
 
-on boot require mdsh           github bashup/mdsh      master bin/mdsh
-on boot require loco           github bashup/loco      master bin/loco
-on boot require realpaths      github bashup/realpaths master realpaths
-on boot require bashup.events  github bashup/events    master bashup.events
-
-on build mdsh --out dk --compile dk.md
-on build chmod +x dk
+~ on build && {{
+	- mdsh --out dk --compile dk.md
+	- chmod +x dk
+}}
 
 unwatch dk '**/.~*.md' '**/*.err'
 watch+ -- dk build

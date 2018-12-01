@@ -19,6 +19,16 @@
 # COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+#!/bin/bash
+dsl:(){ ((!$#))||local __dsl__=("$@");${__blk__:+::};}
+shopt -q expand_aliases||{ unalias -a;shopt -s expand_aliases;};builtin alias\
+	+='{ ::__;::(){ ((!$#))||{ local __blarg__=("$@");shift;"${__dsl__[@]-::no-dsl}" + '\
+	~='{ ::__;::(){ ((!$#))||{ local __blarg__=("$@");shift; '\
+	'{{=return;return;};__blk__=;set -- "${__blarg__[@]:1}"; ' '}}=};__blk__=1;:: . "$@";__::;}'\
+	-='"${__dsl__[@]-::no-dsl}" - '
+::__(){ __bstk__[__bsp__++]="${__blk__:+__blk__=1;$(declare -f ::)}";}
+__::(){ local s=$?;__blk__=;${__bstk__[--__bsp__]:+eval "${__bstk__[__bsp__]}"};return $s;}
+__bsp__=;:${__dsl__+}
 #!/usr/bin/env bash
 
 realpath.location(){ realpath.follow "$1"; realpath.absolute "$REPLY" ".."; }
@@ -163,14 +173,138 @@ done
 for lv in ${!LOCO_@}; do unset "$lv"; done
 
 LOCO_SCRIPT=$0
+{ if [[ $OSTYPE != cygwin && $OSTYPE != msys && -e /dev/fd/0 ]]; then source /dev/fd/0; else source <(cat); fi; } <<'# --- EOF dotenv ---'
 #!/usr/bin/env bash
-event(){ case $1 in error|quote|encode);; *)
-	__ev.encode "${2-}";local f n='' e=bashup_event_$REPLY;f=${e/event/flag}
+
+__dotenv=
+__dotenv_file=
+__dotenv_cmd=.env
+
+.env() {
+	REPLY=()
+	[[ $__dotenv_file || ${1-} == -* ]] || .env.--file .env || return
+	if declare -F -- ".env.${1-}" >/dev/null; then .env."$@"; return ; fi
+	.env --help >&2; return 64
+}
+
+.env.-f() { .env.--file "$@"; }
+.env.-h() { .env.--help "$@"; }
+.env.--help() {
+	echo "Usage:
+  $__dotenv_cmd [-f|--file FILE] COMMAND [ARGS...]
+  $__dotenv_cmd -h|--help
+
+Options:
+  -f, --file FILE          Use a file other than .env
+
+Read Commands:
+  get KEY                  Get raw value of KEY (or fail)
+  parse [KEY...]           Get trimmed KEY=VALUE lines for named keys (or all)
+  export [KEY...]          Export the named keys (or all) in shell format
+
+Write Commands:
+  set [+]KEY[=VALUE]...    Set or unset values (in-place w/.bak); + sets default
+  puts STRING              Append STRING to the end of the file
+  generate KEY [CMD...]    Set KEY to the output of CMD unless it already exists;
+                           return the new or existing value."
+}
+
+.env.get() {
+	.env::arg "get requires a key" "$@" &&
+	[[ "$__dotenv" =~ ^(.*(^|$'\n'))([ ]*)"$1="(.*)$ ]] &&
+	REPLY=${BASH_REMATCH[4]%%$'\n'*} && REPLY=${REPLY%"${REPLY##*[![:space:]]}"}
+}
+
+.env.parse() {
+	local line key
+	while IFS= read -r line; do
+		line=${line#"${line%%[![:space:]]*}"}  # trim leading whitespace
+		line=${line%"${line##*[![:space:]]}"}  # trim trailing whitespace
+		if [[ ! "$line" || "$line" == '#'* ]]; then continue ; fi
+		if (($#)); then
+			for key; do
+				if [[ $key == "${line%%=*}" ]]; then REPLY+=("$line"); break;
+				fi
+			done
+		else
+			REPLY+=("$line")
+		fi
+	done <<<"$__dotenv"
+	((${#REPLY[@]}))
+}
+
+.env.export() {	! .env.parse "$@" || export "${REPLY[@]}"; }
+
+.env.set() {
+	.env::file load || return ; local key saved=$__dotenv
+	while (($#)); do
+		key=${1#+}; key=${key%%=*}
+		if .env.get "$key"; then
+			REPLY=()
+			if [[ $1 == +* ]]; then shift; continue  # skip if already found
+			elif [[ $1 == *=* ]]; then
+				__dotenv=${BASH_REMATCH[1]}${BASH_REMATCH[3]}$1$'\n'${BASH_REMATCH[4]#*$'\n'}
+			else
+				__dotenv=${BASH_REMATCH[1]}${BASH_REMATCH[4]#*$'\n'}
+				continue   # delete all occurrences
+			fi
+		elif [[ $1 == *=* ]]; then
+			__dotenv+="${1#+}"$'\n'
+		fi
+		shift
+	done
+	[[ $__dotenv == "$saved" ]] || .env::file save
+}
+
+.env.puts() { echo "${1-}">>"$__dotenv_file" && __dotenv+="$1"$'\n'; }
+
+.env.generate() {
+	.env::arg "key required for generate" "$@" || return
+	.env.get "$1" && return || REPLY=$("${@:2}") || return
+	.env::one "generate: ouptut of '${*:2}' has more than one line" "$REPLY" || return
+	.env.puts "$1=$REPLY"
+}
+
+.env.--file() {
+	.env::arg "filename required for --file" "$@" || return
+	__dotenv_file=$1; .env::file load || return
+	(($#<2)) || .env "${@:2}"
+}
+
+.env::arg() { [[ "${2-}" ]] || { echo "$__dotenv_cmd: $1" >&2; return 64; }; }
+
+.env::one() { [[ "$2" != *$'\n'* ]] || .env::arg "$1"; }
+
+.env::file() {
+	local REPLY=$__dotenv_file
+	case "$1" in
+	load)
+		__dotenv=; ! [[ -f "$REPLY" ]] || __dotenv="$(<"$REPLY")"$'\n' || return ;;
+	save)
+		if [[ -L "$REPLY" ]] && declare -F -- realpath.resolved >/dev/null; then
+			realpath.resolved "$REPLY"
+		fi
+		{ [[ ! -f "$REPLY" ]] || cp -p "$REPLY" "$REPLY.bak"; } &&
+		printf %s "$__dotenv" >"$REPLY.bak" && mv "$REPLY.bak" "$REPLY"
+	esac
+}
+
+if [[ $BASH_SOURCE == "$0" ]]; then
+	set -eu
+	__dotenv_cmd=${0##*/}
+	.env.export() { .env.parse "$@" || return 0; printf 'export %q\n' "${REPLY[@]}"; exit; }
+	.env "$@" || exit $?
+	${REPLY[@]+printf '%s\n' "${REPLY[@]}"}
+fi
+# --- EOF dotenv ---
+#!/usr/bin/env bash
+event(){ case $1 in error|quote|encode|decode);; *)
+	__ev.encode "${2-}";local f n='' e=bashup_event_$REPLY'[1]';f=${e/event/flag}
 	case $1 in emit) shift;${!f-};eval "${!e-}"; return ;;on|once|off|has)
 		case "${3-}" in @_) n='$#';; @*[^0-9]*);; @[0-9]*) n=$((${3#@}));; esac; ${n:+
 		set -- "$1" "$2" "${@:4}" }
 		case $1/$# in
-			has/[12]) REPLY=;; */[12]) set -- error "${2-}: missing callback";;
+			on*/[12]) set -- error "${2-}: missing callback";; */[12]) REPLY=;;
 			*) __ev.quote "${@:3}";((${n/\$#/1}))&&REPLY+=' "${@:2:'"$n"'}"';REPLY+=$'\n'
 		esac
 	esac
@@ -178,26 +312,30 @@ esac ;__ev."$@";}
 __ev.error(){ echo "$1">&2;return "${2:-64}";}
 __ev.quote(){ REPLY=; ${@+printf -v REPLY ' %q' "$@"}; REPLY=${REPLY# };}
 __ev.has(){ [[ ${!e-} && $'\n'"${!e}" == *$'\n'"$REPLY"* && ! ${!f-} ]];}
+__ev.get(){ ${!f-};REPLY=${!e-};}
 __ev.on(){ __ev.has && return;if [[ ! ${!f-} ]];then eval "$e"+='$REPLY';else eval "${!e-};$REPLY";fi;}
-__ev.off(){ __ev.has||return 0; n="${!e}"; n=${n#"$REPLY"}; eval "$e"=$'"${n//\n"$REPLY"/\n}"';}
-__ev.fire(){ ${!f-};set -- "$e" "${@:2}"; while [[ ${!1-} ]];do eval "$1=;${!1}"; done ;}
+__ev.off(){ __ev.has||return 0; n="${!e}"; n=${REPLY:+"${n#"$REPLY"}"}; eval "$e"=$'"${n//\n"$REPLY"/\n}"';[[ ${!e} ]]||unset "${e%\[1]}";}
+__ev.fire(){ ${!f-};set -- "$e" "${@:2}"; while [[ ${!1-} ]];do eval "unset ${1%\[1]};${!1}"; done ;}
 __ev.all(){ ${!f-};e=${!e-};eval "${e//$'\n'/||return; }";}
 __ev.any(){ ${!f-};e=${!e-};eval "${e//$'\n'/&&return|| } ! :";}
 __ev.resolve(){
 	${!f-};__ev.fire "$@";__ev.quote "$@"
-	readonly "$f=eval __ev.error 'event \"'$1'\" already resolved' 70;return" "$e=set -- $REPLY"
+	printf -v n "eval __ev.error 'event \"%s\" already resolved' 70;return" "$1"; eval "${f}"='$n'
+	printf -v n 'set -- %s' "$REPLY"; eval "${e}"='$n';readonly "${f%\[1]}" "${e%\[1]}"
 }
 __ev.resolved(){ [[ ${!f-} ]];}
 __ev.once(){ n=${n:-0} n=${n/\$#/_}; event on "$1" "@$n" __ev_once $# "@$n" "$@";}
 __ev_once(){ event off "$3" "$2" __ev_once "${@:1:$1+2}"; "${@:4}";}
 __ev_jit(){
-	local r=${__ev_jit-} s=$1;((${#r}<250))||__ev_jit=
+	local q r=${__ev_jit-} s=$1;((${#r}<250))||__ev_jit=
 	while [[ "$s" ]]; do
-		r=${s::1};s=${s//$r/};printf -v r 'REPLY=${REPLY//%q/_%02x_};' "$r" "'$r";eval "$r";__ev_jit+=$r
+		r=${s::1};s=${s:1};printf -v q %q "$r";eval 's=${s//'"$q}";printf -v r 'REPLY=${REPLY//%s/_%02x};' "${q/#[~]/[~]}" "'$r";eval "$r";__ev_jit+="$r"
 	done
-	eval '__ev.encode(){ local LC_ALL=C;REPLY=${1//_/__};'\
+	eval '__ev.encode(){ local LC_ALL=C;REPLY=${1//_/_5f};'\
 	"${__ev_jit-}"' [[ $REPLY != *[^_[:alnum:]]* ]] || __ev_jit "${REPLY//[_[:alnum:]]/}";}'
 };__ev_jit ''
+__ev.decode(){ REPLY=();while (($#));do printf -v n %b "${1//_/\\x}";REPLY+=("$n");shift;done;}
+__ev.list(){ eval 'set -- "${!'"${e%\[1]}"'@}"';__ev.decode "${@#bashup_event_}";}
 run() {
 	if [[ ! ${DEVKIT_IS_PAGING-} ]] && event has "before_$1" paged-command; then
 		dk use: tty
@@ -228,12 +366,13 @@ log()      { echo "$1" >&2; }
 
 paged-command() { while (($#)); do before "$1" paged-command; shift; done; }
 
-on() { event on "$@"; }
-off() { event off "$@"; }
+on() { if (($#==1)); then dsl: event-dsl on "$1";  else event on "$@"; fi; }
+off(){ if (($#==1)); then dsl: event-dsl off "$1"; else event off "$@"; fi; }
 
-before() { event on "before_$@"; }
-after()  { event on "after_$@"; }
+before() { on "before_$@"; }
+after()  { on "after_$@"; }
 
+event-dsl() { [[ $3 != + ]] || abort "Can't nest event blocks" 64; event "$1" "$2" "${@:4}"; }
 trap 'event emit "EXIT"' EXIT
 
 # Commands that should have a bootstrap first:
@@ -261,16 +400,25 @@ on    "clean" clean-deps
 after "clean" hash -r
 after "clean" linkbin .devkit/dk
 
+on boot dk-fetch-deps
+dk-fetch-deps() {
+	local BUILD_DEPS; .env -f "package.sh" export BUILD_DEPS
+	IFS=: read -ra BUILD_DEPS <<<"${BUILD_DEPS-}"; set -- ${BUILD_DEPS[@]+"${BUILD_DEPS[@]}"}
+	for REPLY; do github "$REPLY"; done
+}
 basher() {
     require basher github basherpm/basher master bin/basher
     "$BASHER_INSTALL_BIN/basher" "$@"
 }
 
 github() {
-    [[ -d "$BASHER_PACKAGES_PATH/$1/.git" ]] && return
-    mkdir -p "$BASHER_PACKAGES_PATH/$1"
-    git clone -q --depth=1 -b "${2:-master}" "https://github.com/$1" "$BASHER_PACKAGES_PATH/$1"
-    local bin; for bin in "${@:3}"; do linkbin "$BASHER_PACKAGES_PATH/$1/$bin"; done
+	[[ $1 != *@* ]] || set -- "${1%%@*}" "${1#*@}" "${@:2}"
+	[[ -d "$BASHER_PACKAGES_PATH/$1/.git" ]] && return
+	mkdir -p "$BASHER_PACKAGES_PATH/$1"
+	git clone -q --depth=1 ${2:+-b "$2"} "https://github.com/$1" "$BASHER_PACKAGES_PATH/$1"
+	local BINS; .env -f "$BASHER_PACKAGES_PATH/$1/package.sh" export BINS
+	IFS=: read -ra BINS <<<"${BINS-}"; set -- "$1" "${2-}" ${BINS[@]+"${BINS[@]}"} "${@:3}"
+	for REPLY in "${@:3}"; do ${REPLY:+linkbin "$BASHER_PACKAGES_PATH/$1/$REPLY"}; done
 }
 go() { require-any go; unset -f go; command go "$@"; }
 linkbin() {

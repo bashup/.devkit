@@ -7,8 +7,11 @@
 @main loco_main   # use loco's main as our main
 
 @require pjeby/license @comment    LICENSE
+@require bashup/scale-dsl cat      "$BASHER_PACKAGES_PATH/bashup/scale-dsl/scale-dsl"
 @require bashup/loco   mdsh-source "$BASHER_PACKAGES_PATH/bashup/loco/loco.md"
+@require bashup/dotenv mdsh-embed  "$BASHER_PACKAGES_PATH/bashup/dotenv/dotenv"
 @require bashup/events cat         "$BASHER_PACKAGES_PATH/bashup/events/bashup.events"
+echo
 ```
 
 # dk - the devkit CLI
@@ -85,12 +88,13 @@ paged-command() { while (($#)); do before "$1" paged-command; shift; done; }
 To make .dkrc files more compact, and clearer in intent, we also define some shorthand functions for registering or unregistering event handlers, and before/after events.  We also register an `EXIT` trap that fires an `EXIT` event, so that multiple exit handlers can safely be registered.
 
 ```shell
-on() { event on "$@"; }
-off() { event off "$@"; }
+on() { if (($#==1)); then dsl: event-dsl on "$1";  else event on "$@"; fi; }
+off(){ if (($#==1)); then dsl: event-dsl off "$1"; else event off "$@"; fi; }
 
-before() { event on "before_$@"; }
-after()  { event on "after_$@"; }
+before() { on "before_$@"; }
+after()  { on "after_$@"; }
 
+event-dsl() { [[ $3 != + ]] || abort "Can't nest event blocks" 64; event "$1" "$2" "${@:4}"; }
 trap 'event emit "EXIT"' EXIT
 
 ```
@@ -129,6 +133,21 @@ after "clean" linkbin .devkit/dk
 
 ## Dependency Management Functions
 
+### Automatic Dependency Fetching
+
+When `dk` starts, it fetches any github dependencies from `BUILD_DEPS` in `package.sh`, if applicable.  The file must be in dotenv, and dependencies are `:`-separated `user/repo@ref` strings, where the `@ref` is optional.
+
+```shell
+on boot dk-fetch-deps
+dk-fetch-deps() {
+	local BUILD_DEPS; .env -f "package.sh" export BUILD_DEPS
+	IFS=: read -ra BUILD_DEPS <<<"${BUILD_DEPS-}"; set -- ${BUILD_DEPS[@]+"${BUILD_DEPS[@]}"}
+	for REPLY; do github "$REPLY"; done
+}
+```
+
+
+
 ### basher
 
 For use in `.dkrc` commands, we provide an auto-installing wrapper function for  `basher`, that installs it locally if needed.
@@ -143,14 +162,17 @@ basher() {
 
 ### github
 
-Not everything is installable with basher, of course, and basher itself needs to be installed via github.  So we have a `github` *user/repo [ref [bin1 bin2...]]* function, which clones the desired repo under `.deps` (if it's not already there) and links the named files to `.deps/bin`.  The *ref* can be a branch or tag; it defaults to `master` if unspecified.
+Not everything is installable with basher, of course, and basher itself needs to be installed via github.  So we have a `github` *user/repo[@ref]\[ref [bin1 bin2...]]* function, which clones the desired repo under `.deps` (if it's not already there) and links the named files to `.deps/bin`.  The *ref* can be a branch or tag; it defaults to the repository's default branch if unspecified.  Any binaries specified will be linked in *addition* to those specified by the repo's `package.sh`, if it exists.
 
 ```shell
 github() {
-    [[ -d "$BASHER_PACKAGES_PATH/$1/.git" ]] && return
-    mkdir -p "$BASHER_PACKAGES_PATH/$1"
-    git clone -q --depth=1 -b "${2:-master}" "https://github.com/$1" "$BASHER_PACKAGES_PATH/$1"
-    local bin; for bin in "${@:3}"; do linkbin "$BASHER_PACKAGES_PATH/$1/$bin"; done
+	[[ $1 != *@* ]] || set -- "${1%%@*}" "${1#*@}" "${@:2}"
+	[[ -d "$BASHER_PACKAGES_PATH/$1/.git" ]] && return
+	mkdir -p "$BASHER_PACKAGES_PATH/$1"
+	git clone -q --depth=1 ${2:+-b "$2"} "https://github.com/$1" "$BASHER_PACKAGES_PATH/$1"
+	local BINS; .env -f "$BASHER_PACKAGES_PATH/$1/package.sh" export BINS
+	IFS=: read -ra BINS <<<"${BINS-}"; set -- "$1" "${2-}" ${BINS[@]+"${BINS[@]}"} "${@:3}"
+	for REPLY in "${@:3}"; do ${REPLY:+linkbin "$BASHER_PACKAGES_PATH/$1/$REPLY"}; done
 }
 ```
 
