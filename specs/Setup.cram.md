@@ -7,7 +7,7 @@ Without .git:
     (Not using git?  Be sure to exclude .devkit and .deps from revision control)
     devkit setup is complete; you can now commit the changes
 
-
+~~~sh
     $ ls -ap
     ./
     ../
@@ -20,6 +20,7 @@ Without .git:
     total * (glob)
     * README.md (glob)
     * bootstrap (glob)
+    * build -> bootstrap (glob)
     * cibuild -> bootstrap (glob)
     * clean -> bootstrap (glob)
     * console -> bootstrap (glob)
@@ -28,10 +29,10 @@ Without .git:
     * test -> bootstrap (glob)
     * update -> bootstrap (glob)
 
-
     $ diff script/bootstrap .devkit/script/bootstrap
     $ diff .envrc           .devkit/sample.envrc
     $ diff .dkrc            .devkit/sample.dkrc
+~~~
 
 With git (clean):
 
@@ -48,6 +49,7 @@ With git (clean):
     A  .gitignore
     A  script/README.md
     A  script/bootstrap
+    A  script/build
     A  script/cibuild
     A  script/clean
     A  script/console
@@ -61,18 +63,20 @@ With git (clean):
 
 With git (dirty):
 
+~~~sh
     $ .devkit/setup
     Please commit or stash your changes before running setup
     [65]
 
     $ git commit -m "Added devkit"
     [master (root-commit) *] Added devkit (glob)
-     12 files changed, 93 insertions(+)
+     13 files changed, 94 insertions(+)
      create mode 100644 .dkrc
      create mode 100644 .envrc
      create mode 100644 .gitignore
      create mode 100644 script/README.md
      create mode 100755 script/bootstrap
+     create mode 120000 script/build
      create mode 120000 script/cibuild
      create mode 120000 script/clean
      create mode 120000 script/console
@@ -80,6 +84,7 @@ With git (dirty):
      create mode 120000 script/setup
      create mode 120000 script/test
      create mode 120000 script/update
+~~~
 
 With already existing files:
 
