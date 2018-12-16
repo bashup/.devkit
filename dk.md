@@ -94,7 +94,7 @@ off(){ if (($#==1)); then dsl: event-dsl off "$1"; else event off "$@"; fi; }
 before() { on "before_$@"; }
 after()  { on "after_$@"; }
 
-event-dsl() { [[ $3 != + ]] || abort "Can't nest event blocks" 64; event "$1" "$2" "${@:4}"; }
+event-dsl() { [[ ! ${__blk__-} ]] || abort "Can't nest event blocks" 64; event "$@"; }
 trap 'event emit "EXIT"' EXIT
 
 ```

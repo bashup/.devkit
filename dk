@@ -20,15 +20,13 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #!/bin/bash
-dsl:(){ ((!$#))||local __dsl__=("$@");${__blk__:+::};}
 shopt -q expand_aliases||{ unalias -a;shopt -s expand_aliases;};builtin alias\
-	+='{ ::__;::(){ ((!$#))||{ local __blarg__=("$@");shift;"${__dsl__[@]-::no-dsl}" + '\
-	~='{ ::__;::(){ ((!$#))||{ local __blarg__=("$@");shift; '\
-	'{{=return;return;};__blk__=;set -- "${__blarg__[@]:1}"; ' '}}=};__blk__=1;:: . "$@";__::;}'\
-	-='"${__dsl__[@]-::no-dsl}" - '
+	+='{ ::__;::(){ ((!$#))||{ shift;"${__dsl__[@]-::no-dsl}" '\
+	~='{ ::__;::(){ ((!$#))||{ shift; ' -='"${__dsl__[@]-::no-dsl}" '\
+	'{{=return;return;};__blk__=;set -- "${__blarg__[@]:1}"; ' '}}=};__:: 0 "$@";}'
+eval 'dsl:(){ ((!$#))||local __dsl__=("$@");${__blk__:+::};};__bsp__=0
 ::__(){ __bstk__[__bsp__++]="${__blk__:+__blk__=1;$(declare -f ::)}";}
-__::(){ local s=$?;__blk__=;${__bstk__[--__bsp__]:+eval "${__bstk__[__bsp__]}"};return $s;}
-__bsp__=;:${__dsl__+}
+__::(){ local __blarg__=("$@");__blk__=1;:: "$@"||set -- $?;__blk__=;local REPLY;${__bstk__[--__bsp__]:+eval "${__bstk__[__bsp__]}"}||:;return $1;}'
 #!/usr/bin/env bash
 
 realpath.location(){ realpath.follow "$1"; realpath.absolute "$REPLY" ".."; }
@@ -372,7 +370,7 @@ off(){ if (($#==1)); then dsl: event-dsl off "$1"; else event off "$@"; fi; }
 before() { on "before_$@"; }
 after()  { on "after_$@"; }
 
-event-dsl() { [[ $3 != + ]] || abort "Can't nest event blocks" 64; event "$1" "$2" "${@:4}"; }
+event-dsl() { [[ ! ${__blk__-} ]] || abort "Can't nest event blocks" 64; event "$@"; }
 trap 'event emit "EXIT"' EXIT
 
 # Commands that should have a bootstrap first:
