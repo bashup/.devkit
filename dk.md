@@ -88,8 +88,8 @@ paged-command() { while (($#)); do before "$1" paged-command; shift; done; }
 To make .dkrc files more compact, and clearer in intent, we also define some shorthand functions for registering or unregistering event handlers, and before/after events.  We also register an `EXIT` trap that fires an `EXIT` event, so that multiple exit handlers can safely be registered.
 
 ```shell
-on() { if (($#==1)); then dsl: event-dsl on "$1";  else event on "$@"; fi; }
-off(){ if (($#==1)); then dsl: event-dsl off "$1"; else event off "$@"; fi; }
+on() { if (($#==1)); then ::block event-dsl on "$1";  else event on "$@"; fi; }
+off(){ if (($#==1)); then ::block event-dsl off "$1"; else event off "$@"; fi; }
 
 before() { on "before_$@"; }
 after()  { on "after_$@"; }

@@ -24,7 +24,7 @@ shopt -q expand_aliases||{ unalias -a;shopt -s expand_aliases;};builtin alias\
 	+='{ ::__;::(){ ((!$#))||{ shift;"${__dsl__[@]-::no-dsl}" '\
 	~='{ ::__;::(){ ((!$#))||{ shift; ' -='"${__dsl__[@]-::no-dsl}" '\
 	'{{=return;return;};__blk__=;set -- "${__blarg__[@]:1}"; ' '}}=};__:: 0 "$@";}'
-eval 'dsl:(){ ((!$#))||local __dsl__=("$@");${__blk__:+::};};__bsp__=0
+eval '::block(){ ((!$#))||local __dsl__=("$@");${__blk__:+::};};__bsp__=0
 ::__(){ __bstk__[__bsp__++]="${__blk__:+__blk__=1;$(declare -f ::)}";}
 __::(){ local __blarg__=("$@");__blk__=1;:: "$@"||set -- $?;__blk__=;local REPLY;${__bstk__[--__bsp__]:+eval "${__bstk__[__bsp__]}"}||:;return $1;}'
 #!/usr/bin/env bash
@@ -364,8 +364,8 @@ log()      { echo "$1" >&2; }
 
 paged-command() { while (($#)); do before "$1" paged-command; shift; done; }
 
-on() { if (($#==1)); then dsl: event-dsl on "$1";  else event on "$@"; fi; }
-off(){ if (($#==1)); then dsl: event-dsl off "$1"; else event off "$@"; fi; }
+on() { if (($#==1)); then ::block event-dsl on "$1";  else event on "$@"; fi; }
+off(){ if (($#==1)); then ::block event-dsl off "$1"; else event off "$@"; fi; }
 
 before() { on "before_$@"; }
 after()  { on "after_$@"; }
