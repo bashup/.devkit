@@ -20,6 +20,7 @@
 
 # -- Language-Specific Modules --
 # dk use: composer          # utilities for accessing composer-based dev tools
+# dk use: golang            # Auto-install go on request, select versions w/gimme
 # dk use: peridot           # run tests using peridot-php
 # dk use: psysh-console     # make the "console" command run the Psysh PHP REPL
 # dk use: shellcheck        # support running shellcheck (via docker if not installed)

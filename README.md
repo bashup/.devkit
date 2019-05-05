@@ -36,6 +36,8 @@ Dependencies are installed to a `.deps` directory, with executables in `.deps/bi
   * [entr-watch](#entr-watch)
   * [modd-watch](#modd-watch)
   * [reflex-watch](#reflex-watch)
+- [Modules for Golang-Using Projects](#modules-for-golang-using-projects)
+  * [golang](#golang)
 - [Modules for Python-Using Projects](#modules-for-python-using-projects)
   * [virtualenv](#virtualenv)
 - [Modules for PHP-Using Projects](#modules-for-php-using-projects)
@@ -257,6 +259,35 @@ The key differences are:
   Note: this applies only to `watch` and `watch+`; the `watch-reload` and `unwatch` commands only accept globs, and `unwatch-re` only accepts regexes.
 
 * Because reflex queues the changes it observes, and defaults to watching **everything** that isn't one of its common exclusion patterns, you can end up with infinitely looping rebuilds unless your build targets or test outputs are excluded from the watch rules that run them.  You can use `unwatch` or `unwatch-re` to define global exclusion globs and/or regexes that will not trigger any `watch` rules (including `watch+` and `watch-reload` rules).
+
+### Modules for Golang-Using Projects
+
+#### golang
+
+The [golang module](modules/golang) makes it easy to fetch dependencies built with go (e.g. dnscontrol, modd, reflex, etc.), even on machines that don't have the right go version installed.  In the simplest case, you would add lines like these to your .dkrc:
+
+```sh
+dk use: golang
+golang 1.11.x   # use latest-available golang 1.11
+```
+
+And then use `go get` or other go commands as needed.  Binaries will be built in `.deps/bin`, and the default `GOROOT` is `.deps/go` (unless you override these settings in `.envrc`).
+
+The  `dk use: golang` command gives your `.dkrc` access to the following functions:
+
+* `golang` *version* -- select a go version using [gimme](https://github.com/travis-ci/gimme).  The *version* can be anything accepted by gimme, such as `stable`, `master`, `1.10.x`, etc.  Whatever version is selected, the resulting environment is saved to `.deps/.gimme-env` for future use by `.envrc`.  The current process environment will also be updated to point to the specified version.
+* `go` *command...* -- the `go` function wraps the `go` command such that if no `go` binary is available, one will be fetched using gimme.  The version fetched will be `$GIMME_GO_VERSION`, or `stable` by default.  The given go command is then run.
+* `gimme` *options...* -- this function runs the gimme command, after first fetching it from github if necessary.  See the gimme documentation for how to use it; note that running this function does *not* update the shell environment unless you `eval` its output, as per the gimme docs.  So, unless your project requires *multiple* versions of go, you should just use the `golang` function in your `.dkrc`.
+
+Notice that if you are using direnv, simply going to your project directory will set up your environment such that the `go` on the `PATH` will be the version most recently requested via `golang`.
+
+Also note that, by default, `gimme` installs requested go versions in a directory under **the current user's home directory**.  You can change this behavior using the `GIMME_VERSION_PREFIX` and `GIMME_ENV_PREFIX` variables, which default to `~/.gimme/versions` and `~/.gimme/envs`, respectively.  (For example, setting them to paths under `.deps/.gimme/` would force the use of 100% project-local installs, at the cost of extra disk space and bootstrapping time.)
+
+In addition to the above functions, the golang module also adds a `dk golang` subcommand, which:
+
+* When run with an option as the first argument (e.g. `-h`, `-k`, `--list`, etc.), it runs `gimme` with the given arguments (installing it in the project deps if needed)
+* When run with a non-option first argument (e.g. `stable`, `1.12.x`, etc.), it runs the `golang` function to select a specific go version and save it to `.deps/gimme-env`.  If you're using direnv, your current environment will also be updated.
+* When run with no arguments, the current `go version` for the project will be displayed (after first installing `go` and `gimme` if needed.)
 
 ### Modules for Python-Using Projects
 

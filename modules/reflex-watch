@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 dk.watch() {
+	require-any reflex dk use: golang
 	require-any reflex go get github.com/bashup/reflex  # Need reflex for this
 	require-any tput  # for pager.watch
 

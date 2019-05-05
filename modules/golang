@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+go() {
+	# Use the stable version of go, if not already set
+	require-any go golang "${GIMME_GO_VERSION:-stable}"
+	command go "$@"
+}
+
+golang() {
+	local gimme_env=$BASHER_PREFIX/.gimme-env envrc=$DEVKIT_ROOT/.envrc
+	# Strip out "go version" command before loading, so it's quiet
+	gimme "$@" | grep -v "go version >" >"$gimme_env"
+	source "$gimme_env"
+
+	# Try to make direnv reload the .envrc, in case the go env has changed
+	[[ ! -f "$envrc" ]] || touch "$envrc" 2>/dev/null || true
+}
+
+# devkit command, useful for debugging and manual settings
+dk.golang() {
+	case ${1-} in
+		-*) gimme "$@" ;;  # help, list, etc.
+		'') go version ;;  # no arguments: show version
+		*)  golang "$@"; command go version;  # select a go version persistently
+	esac
+}
+
+# Use default OS for gimme, unless overridden in .dkrc
+unset GIMME_OS
+
+gimme() {
+	# Fetch gimme from github if needed
+	require gimme github travis-ci/gimme master gimme
+	command gimme "$@"
+}
+

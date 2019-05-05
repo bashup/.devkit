@@ -2,6 +2,7 @@
 dk use: tty
 
 dk.watch() {
+	require-any modd dk use: golang
 	require-any modd go get github.com/cortesi/modd/cmd/modd  # Need modd for this
 	require-any tput  # for pager.watch
 
