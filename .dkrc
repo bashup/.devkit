@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Use cram and watch for testing, and provide a shell console
-dk use: cram modd-watch shell-console bash32 shellcheck
+dk use: cram modd-watch shell-console bash-kit shellcheck
 
 ~ on build && {{
 	- mdsh --out dk --compile dk.md

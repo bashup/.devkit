@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+echo "Warning: bash32 module is deprecated; use bash-kit instead" >&2
+
+dk use: bash-kit
 
 export BASH32_IMAGE=bashitup/bash-3.2
 export BASH32_DOCKER_OPTS="-it"
@@ -11,16 +14,17 @@ bash32.bootstrap() {
     : # Redefine this to do any in-container bootstrapping, e.g. to install other packages
 }
 
+[[ "${BASHKIT_VERSION-}" != "3.2" ]] || before run-bash bash32.bootstrap
+
 dk.bash32() {
     bash32.prepare-image
-    printf -v cmd "%q " "$@"
-    realpath.resolved "$LOCO_ROOT/.devkit"
-    docker run --rm -e TERM \
-        -v "$LOCO_ROOT:/workdir" \
-        -v "$REPLY:/workdir/.devkit" \
-        -v "$LOCO_ROOT/.deps/.bash32:/workdir/.deps" \
-        $BASH32_DOCKER_OPTS "$BASH32_IMAGE" \
-        -c '.devkit/dk bash32-bootstrap '"$cmd"
-}
 
-dk.bash32-bootstrap() { bash32.bootstrap && dk "$@"; }
+    # Figure out what image to use, falling back to BASHKIT_IMAGE
+    # if using the default bashitup/bash-3.2:latest image
+    REPLY=$BASH32_IMAGE; [[ $REPLY == *:* ]] || REPLY+=":latest"
+    [[ $REPLY != "bashitup/bash-3.2:latest" ]] || REPLY=$BASHKIT_IMAGE
+
+	# shellcheck disable=SC2034
+    local BASHKIT_IMAGE=$REPLY BASHKIT_DOCKER_OPTS=("$BASH32_DOCKER_OPTS")
+    dk with-bash 3.2 "$@"
+}

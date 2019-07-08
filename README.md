@@ -44,8 +44,8 @@ Dependencies are installed to a `.deps` directory, with executables in `.deps/bi
   * [composer](#composer)
   * [peridot](#peridot)
   * [psysh-console](#psysh-console)
-- [Modules for Projects Using bash 3.2](#modules-for-projects-using-bash-32)
-  * [bash32](#bash32)
+- [Modules for Projects Using bash](#modules-for-projects-using-bash)
+  * [bash-kit](#bash-kit)
 
 <!-- tocstop -->
 
@@ -324,17 +324,20 @@ To use this module, just `dk use: peridot` in your `.dkrc`.
 
 The [psysh-console](modules/psysh-console) module implements a `dk.console` function to provide a `script/console` command that starts a psysh shell.
 
-### Modules for Projects Using bash 3.2
+### Modules for Projects Using bash
 
-#### bash32
+#### bash-kit
 
-The [bash32](modules/bash32) module adds a `bash32` command you can use to run other commands in a docker container with bash 3.2.  Bashup projects use this to test compatibility with bash 3.2 and busybox.  You must enable the module by including `bash32` in your `.dkrc`'s `dk use:`, and the command will only work if you have access to docker with local volume support (to map the project directory into the container).
+The [bash-kit](modules/bash-kit) module adds a `with-bash` command you can use to run other commands in a docker container with a specified version of bash.  Bashup projects use this to test compatibility with various bash versions.  You must enable the module by including `bash-kit` in your `.dkrc`'s `dk use:`, and the command will only work if you have access to docker with local volume support (to map the project directory into the container).
 
-Running `dk bash32 command ...`  runs `dk command ...` inside the docker container, so if you have the relevant devkit modules enabled, you can run `test`,`watch`, and even `console`, inside the container.  The following variables and functions control the operation of the container:
+Running `dk with-bash VERSION command ...`  runs `dk command ...` inside a docker container using the specified version of bash, so if you have the relevant devkit modules enabled, you can run `test`,`watch`, and even `console`, inside the container.
 
-* `$BASH32_IMAGE` -- Image to run: defaults to [bashitup/bash-3.2](https://github.com/bashup/bash-3.2)
-* `$BASH32_DOCKER_OPTS` -- Additional options to run the container with; defaults to `-it` for an interactive run.  (`--rm`, `-e TERM`, volume mappings and the command line are automatically generated, so you do not need to include them here.)
-* `bash32.prepare-image` -- function that gets called before launching the container.  No-op by default; can alter the `$BASH32_IMAGE` and `$BASH32_DOCKER_OPTS`.
-* `bash32.bootstrap` -- function that gets called *inside* the container before running the requested command.  No-op by default, can be used to install dependencies or override other `.dkrc` variables and functions to provide container-specific behavior.
+The following variables control the operation of the container:
 
-Note: the docker container will use `.deps/.bash32` as its `/workdir/.deps`, so that its installed dependencies can be platform-specific.  Running `clean` inside the container will clean only these dependencies, while running `clean` outside the container will wipe both sets of dependencies.
+* `$BASHKIT_IMAGE` -- Image to run: defaults to [bashitup/bash-kit](https://github.com/bashup/bash-kit); if it is not changed from the default, the bash version can be [any official bash tag](https://hub.docker.com/_/bash?tab=tags), and the needed image will be pulled or built if necessary.
+* `$BASHKIT_DOCKER_OPTS` -- An array of additional options to run the container with; defaults to `-it` for an interactive run.  (`--rm`, `-e TERM`, volume mappings and the command line are automatically generated, so you do not need to include them here.)  If you need multiple options or values, set them as an array, e.g. `BASHKIT_DOCKER_OPTS=(--foo "bar baz")`, or `BASHKIT_DOCKER_OPTS=()` to remove the default options.
+
+Inside the docker container, a `run-bash VERSION command...`  command is run first, allowing you to do any docker-specific setup (e.g. installing additional dependencies) by either overriding the command or defining a `before` handler for the  `run-bash` event.
+
+Note: the docker container will use `.deps/.bash-VERSION` as its `/workdir/.deps`, so that its installed dependencies can be platform-specific.  Running `clean` inside a container will clean only the dependencies for that bash version, while running `clean` outside the container will wipe dependencies for both the base project and all bash versions used to that point.
+

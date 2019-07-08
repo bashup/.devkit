@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+export BASHKIT_IMAGE=bashitup/bash-kit
+export BASHKIT_DOCKER_OPTS=(-it)
+
+
+bashkit-build() {
+	# Build full image tag
+	REPLY=$1; [[ $REPLY == *:* ]] || REPLY+=:$2
+
+	# Only build if standard image, non-standard tag, and doesn't exist locally
+	[[ $1 != bashitup/bash-kit ]] && return
+	[[ " 3.2 4.2 4.3 4.4 5.0 " == *" $2 "* ]] && return
+	[[ "$(docker images -q "$1:$2")" ]] && return
+
+	# build from github
+	docker build -t "$REPLY" --build-arg BASH_VER="$2" github.com/bashup/bash-kit
+}
+
+dk.with-bash() {
+	bashkit-build "$BASHKIT_IMAGE" "$1" || return
+	local cmd image=$REPLY
+	printf -v cmd "%q " "$@"
+	realpath.resolved "$LOCO_ROOT/.devkit"
+
+	docker run --rm -e TERM -e BASHKIT_VERSION="$1" \
+		-v "$LOCO_ROOT:/workdir" \
+		-v "$REPLY:/workdir/.devkit" \
+		-v "$LOCO_ROOT/.deps/.bash-$1:/workdir/.deps" \
+		${BASHKIT_DOCKER_OPTS[@]+"${BASHKIT_DOCKER_OPTS[@]}"} \
+		"$image" -c '.devkit/dk run-bash '"$cmd"
+}
+
+dk.run-bash() { export BASHKIT_VERSION="$1"; dk "${@:2}"; }
