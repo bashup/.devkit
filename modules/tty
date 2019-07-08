@@ -11,7 +11,10 @@ tty-pygmentize() { tty-tool "$1" pygmentize -f 256 -O style=igor -l "$2"; }
 
 pager() { set -- "${tty_prefix-DEVKIT_}IS_PAGING"; [[ ! ${!1-} ]] && tty-tool PAGER less -FRX; }
 
-pager.screenfull() { require-any tput; head -n $(( $(tput lines) - ${1-2} )); }
+pager.screenfull() {
+	local lines=${LINES-24}; ! command -v tput >/dev/null || lines=$(tput lines)
+	head -n $(( lines - ${1-2} ))
+}
 pager.watch()      { clear; date; echo; pager.screenfull 4; }
 
 diffcolor() { tty-tool COLORDIFF colordiff || tty-tool COLORDIFF pygmentize -l diff; }
