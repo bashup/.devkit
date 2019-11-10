@@ -30,7 +30,6 @@ Dependencies are installed to a `.deps` directory, with executables in `.deps/bi
 - [.devkit Modules](#devkit-modules)
 - [All-Purpose Modules](#all-purpose-modules)
   * [cram](#cram)
-  * [dotenv](#dotenv)
   * [shell-console](#shell-console)
 - [Watch Modules](#watch-modules)
   * [entr-watch](#entr-watch)
@@ -149,14 +148,6 @@ For example, if you wanted to change the files to be processed by cram, you can 
 As long as you run cram via `script/test`, `dk test`, or `dk cram`, you can place files named `cram-setup.sh` in your test directories, and they will be silently sourced at the start of each test file.  Any functions or variables you define will then be available for your tests, and the setup file can access any cram environment variables (e.g. `$TESTDIR` and `$TESTFILE`).  Setup files should not produce any output, or they will break the corresponding tests.
 
 Setup files can source other shell files, including other directories' `cram-setup.sh` files if you need to share setup between directories (e.g. `source "$TESTDIR/../cram-setup.sh"` to source and extend a parent directory's setup).  You can also just symlink from one cram-setup.sh to another.
-
-#### dotenv
-
-The [dotenv](modules/dotenv) module sources a local clone of the [bashup/dotenv](https://github.com/bashup/dotenv/) tool for manipulating .env files in [docker-compose format](https://docs.docker.com/compose/compose-file/#env_file).  After a `dk use: dotenv`, the rest of your `.dkrc` can use the `.env` function to read, edit, and set defaults in `.env` files -- perfect for project setup scripts or other commands that need configuration.
-
-In addition, if you are using `direnv` (or the console command of the shell-console module), then you can also use the `dotenv` command directly on the command line.
-
-For more information on how `dotenv` and `.env` work, please see the [dotenv documentation](https://github.com/bashup/dotenv/).
 
 #### shell-console
 
@@ -340,4 +331,3 @@ The following variables control the operation of the container:
 Inside the docker container, a `run-bash VERSION command...`  command is run first, allowing you to do any docker-specific setup (e.g. installing additional dependencies) by either overriding the command or defining a `before` handler for the  `run-bash` event.
 
 Note: the docker container will use `.deps/.bash-VERSION` as its `/workdir/.deps`, so that its installed dependencies can be platform-specific.  Running `clean` inside a container will clean only the dependencies for that bash version, while running `clean` outside the container will wipe dependencies for both the base project and all bash versions used to that point.
-

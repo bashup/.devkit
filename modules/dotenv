@@ -1,3 +1,16 @@
 #!/usr/bin/env bash
+echo '
+----------------------------------------------------------------------------
+The dotenv module is deprecated!
+
+The `.env` function is now available to .devkit commands by default, without
+using this module.
+
+If your project needs the `dotenv` command or uses it as a build dependency,
+just add `bashup/dotenv` to BUILD_DEPS in your project'"'"'s package.sh.
+
+You can then remove `dotenv` from your `dk use:` list.
+----------------------------------------------------------------------------
+' >&2
+
 require dotenv github bashup/dotenv master dotenv
-source "${BASHER_INSTALL_BIN}"/dotenv

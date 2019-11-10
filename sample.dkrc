@@ -10,7 +10,6 @@
 # -- Shell/Generic Modules --
 # dk use: bash-kit          # enable `with-bash` command to use different bash versions
 # dk use: cram              # run tests using the "cram" functional test tool
-# dk use: dotenv            # manipulate .env files (docker-compose format)
 # dk use: shell-console     # make the "console" command enter a subshell
 
 # -- Watch Modules --
