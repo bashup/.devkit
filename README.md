@@ -27,6 +27,7 @@ Dependencies are installed to a `.deps` directory, with executables in `.deps/bi
 - [Project Status](#project-status)
 - [Installation](#installation)
 - [Configuration and Extension](#configuration-and-extension)
+  * [Automatic Dependency Fetching](#automatic-dependency-fetching)
 - [.devkit Modules](#devkit-modules)
 - [All-Purpose Modules](#all-purpose-modules)
   * [cram](#cram)
@@ -94,6 +95,18 @@ When somebody checks out the project and runs `script/test` the first time, the 
 On subsequent runs of `script/test` (or `.devkit/dk test`), none of the cloning takes place, since the needed things are already installed.
 
 (Note: you can, if you wish, vendor `.devkit` within your project or use a submodule so your users don't end up cloning their own copy, but if you're trying to pin a specific version it's probably easier to just edit your `script/bootstrap` to fetch the exact `.devkit` version you want from github.)
+
+#### Automatic Dependency Fetching
+
+.devkit extends the `package.sh` format with support for fetching development dependencies from github.  If you create a package.sh containing a `BUILD_DEPS` variable, e.g.:
+
+~~~sh
+BUILD_DEPS=some/package@some-tag-or-branch:other/package
+~~~
+
+Then when any `script/` commands (or the `dk` command) are run, the github packages `some/package` (at `some-tag-or-branch` and `other/package` (at `master`) are cloned to `.deps/some/package` and `.deps/other/package` if those directories don't yet exist.  If the cloned packages have `BINS` listed in *their* `package.sh`, then those files are symliked into `.deps/bin`.
+
+Note: for dependency fetching to work correctly, both the project's `BUILD_DEPS` and its dependencies `BINS` variables in their respective `package.sh` files  must be written without *any* quote marks, escapes, environment variables, etc., as .devkit reads them exactly as written; e.g. `BINS="foo:bar"` will be read as two executables named `"foo` and `bar"` (i.e., with the quotes included).
 
 ### .devkit Modules
 
