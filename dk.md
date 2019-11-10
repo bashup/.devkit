@@ -135,10 +135,9 @@ after "clean" linkbin .devkit/dk
 
 ### Automatic Dependency Fetching
 
-When `dk` starts, it fetches any github dependencies from `BUILD_DEPS` in `package.sh`, if applicable.  The file must be in dotenv, and dependencies are `:`-separated `user/repo@ref` strings, where the `@ref` is optional.
+When `dk` starts, it fetches any github dependencies from `BUILD_DEPS` in `package.sh`, if applicable.  The entry must be in dotenv format (i.e., no quotes or escaping), and dependencies are `:`-separated `user/repo@ref` strings, where the `@ref` is optional.
 
 ```shell
-on boot dk-fetch-deps
 dk-fetch-deps() {
 	local BUILD_DEPS; .env -f "package.sh" export BUILD_DEPS
 	IFS=: read -ra BUILD_DEPS <<<"${BUILD_DEPS-}"; set -- ${BUILD_DEPS[@]+"${BUILD_DEPS[@]}"}
@@ -290,6 +289,7 @@ loco_loadproject() {
         abort "Your .envrc must define a *local* installation of basher!" 78 # EX_CONFIG
 
     require dk linkbin "$DEVKIT_HOME/dk"   # make sure there's a local dk
+    dk-fetch-deps      # fetch BUILD_DEPS specified by package.sh
     source "$1"
     event fire "boot"  # Run boot event as soon as soon as we're finished loading
 }

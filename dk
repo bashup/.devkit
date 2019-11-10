@@ -399,7 +399,6 @@ on    "clean" clean-deps
 after "clean" hash -r
 after "clean" linkbin .devkit/dk
 
-on boot dk-fetch-deps
 dk-fetch-deps() {
 	local BUILD_DEPS; .env -f "package.sh" export BUILD_DEPS
 	IFS=: read -ra BUILD_DEPS <<<"${BUILD_DEPS-}"; set -- ${BUILD_DEPS[@]+"${BUILD_DEPS[@]}"}
@@ -496,6 +495,7 @@ loco_loadproject() {
         abort "Your .envrc must define a *local* installation of basher!" 78 # EX_CONFIG
 
     require dk linkbin "$DEVKIT_HOME/dk"   # make sure there's a local dk
+    dk-fetch-deps      # fetch BUILD_DEPS specified by package.sh
     source "$1"
     event fire "boot"  # Run boot event as soon as soon as we're finished loading
 }
