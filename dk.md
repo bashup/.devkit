@@ -236,16 +236,29 @@ relative-symlink() {
 
 ## `dk use:`
 
-devkit modules are loaded using the `dk use` command, which loads modules from `.devkit/modules` a maximum of once.
+devkit modules are loaded using the `dk use:` command, which loads modules a maximum of once.
+
+A module name of the form `+` *org* `/` *repo [*`@` *ref ] [* `:`*module ]* is loaded from the specified github repository (and possible reference), using the `github` function.  (i.e., it is cached as a dependency in `.deps`, and not refetched unless a `clean` is run).
+
+If the *module* part is given, it is searched for in that repo's `.devkit-modules/`, `bin/`, and root directories; otherwise the module is exected to be named `.devkit-modules/default `, or `.devkit-module` in the repo's root.
+
+Module names *not* beginning with `+` are searched for in the project's own `.devkit-modules` directory, then in `.devkit/modules`.
 
 ```shell
+__dk_find_file() {
+	for REPLY in "${@:3}"; do REPLY=$1/$REPLY${2:+/$2}; [[ -f $REPLY ]] || continue; return; done
+	false
+}
+
 __find_dk_module() {
-    local p
-    for p in .devkit-modules .devkit/modules; do
-        p=$LOCO_ROOT/$p/$1
-        if [[ -f $p ]]; then REPLY=$p; return; fi
-    done
-    return 1
+	case $1 in
+		+?*/?*:*) set -- "${1%:*}" "${1#*:}" .devkit-modules bin . ;;
+		+?*/?*)   set -- "$1"      ""        .devkit-modules/default .devkit-module ;;
+		*)
+			__dk_find_file "$LOCO_ROOT" "$1" .devkit-modules .devkit/modules
+			return
+	esac
+	github "${1#+}"; __dk_find_file "$BASHER_PACKAGES_PATH/${1#+}" "${@:2}"
 }
 
 dk.use:() {

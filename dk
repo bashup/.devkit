@@ -452,13 +452,20 @@ relative-symlink() {
     # Used to create relative links in .deps/bin
     realpath.dirname "$2"; realpath.relative "$1" "$REPLY"; ln -sf "$REPLY" "$2"; return $?
 }
+__dk_find_file() {
+	for REPLY in "${@:3}"; do REPLY=$1/$REPLY${2:+/$2}; [[ -f $REPLY ]] || continue; return; done
+	false
+}
+
 __find_dk_module() {
-    local p
-    for p in .devkit-modules .devkit/modules; do
-        p=$LOCO_ROOT/$p/$1
-        if [[ -f $p ]]; then REPLY=$p; return; fi
-    done
-    return 1
+	case $1 in
+		+?*/?*:*) set -- "${1%:*}" "${1#*:}" .devkit-modules bin . ;;
+		+?*/?*)   set -- "$1"      ""        .devkit-modules/default .devkit-module ;;
+		*)
+			__dk_find_file "$LOCO_ROOT" "$1" .devkit-modules .devkit/modules
+			return
+	esac
+	github "${1#+}"; __dk_find_file "$BASHER_PACKAGES_PATH/${1#+}" "${@:2}"
 }
 
 dk.use:() {

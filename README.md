@@ -29,6 +29,7 @@ Dependencies are installed to a `.deps` directory, with executables in `.deps/bi
 - [Configuration and Extension](#configuration-and-extension)
   * [Automatic Dependency Fetching](#automatic-dependency-fetching)
 - [.devkit Modules](#devkit-modules)
+  * [External Modules](#external-modules)
 - [All-Purpose Modules](#all-purpose-modules)
   * [cram](#cram)
   * [shell-console](#shell-console)
@@ -136,11 +137,26 @@ For projects using bash 3.2
 
 You can activate any of them by adding "`dk use:` *modules...*" to your `.dkrc`, then defining any needed variable or function overrides.  (Typically, you override variables by defining them *before* the `dk use:` line(s), and functions by defining them *after*.)
 
-Note that these modules are not specially privileged in any way: you are not *required* to use them to obtain the specified functionality.  They are simply defaults and examples.
+Note that these modules are not specially privileged in any way: you are not *required* to use them to obtain the specified functionality.  They are simply defaults and examples.  You can write your own modules and put them in a `.devkit-modules` subdirectory of your project root, and `dk use:` will look for modules there before searching .devkit's bundled modules.
 
-So, for example, if you don't like how devkit's `entr-watch` module works, you can write your own functions in `.dkrc` or in a package that you load as a development dependency (e.g. with `require mycommand github mygithubaccount/mycommand mycommand; source "$(command -v mycommand)"`).
+#### External Modules
 
-You can also place your own devkit modules under a  `.devkit-modules` directory in your project root, and `dk use:` will look for modules there before searching .devkit's bundled modules.  You can also access modules from your `.deps` subdirectories by adding symlinks to them from your project's `.devkit-modules`.  (Just make sure your `.dkrc` installs those dependencies *before* `dk use:`-ing them, if they're not there yet.)
+You can also load basically any file from github as a .devkit module, by specifying a module name of the form:
+
+ `+` *org* `/` *repo [* `@`*ref ] [* `:`*module-path ]*
+
+That is, doing e.g. `dk use: +foo/bar@baz:spam` will check out the `baz` branch or tag of `foo/bar` from github into your `.deps` directory (if there's not already a repo there), and then search for one of these files:
+
+* `.deps/foo/bar/.devkit-modules/spam`
+* `.deps/foo/bar/bin/spam/`
+* `.deps/foo/bar/spam/`
+
+Both the `@`*ref* and `:`*module-path* parts are optional, defaulting to `master` and `.devkit-module` respectively, with `dk use: +foo/bar` checking out the master branch of `foo/bar` and searching for one of these files:
+
+* `.deps/foo/bar/.devkit-modules/default`
+* `.deps/foo/bar/.devkit-module`
+
+This means that projects that want to provide .devkit support can include a `.devkit-modules/default` or `.devkit-module` file, allowing others to use it with `dk use: +some/project`, automatically including the repo at build time, and adding its executables to `.deps/bin`.  A project can also be created to just publish a bunch of `.devkit-modules`, or you can just literally source any file you like from any project on github by using an explicit *module-path* in the module name.
 
 ### All-Purpose Modules
 
