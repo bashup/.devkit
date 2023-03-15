@@ -354,7 +354,7 @@ Running `dk with-bash VERSION command ...`  runs `dk command ...` inside a docke
 
 The following variables control the operation of the container:
 
-* `$BASHKIT_IMAGE` -- Image to run: defaults to [bashitup/bash-kit](https://github.com/bashup/bash-kit); if it is not changed from the default, the bash version can be [any official bash tag](https://hub.docker.com/_/bash?tab=tags), and the needed image will be pulled or built if necessary.
+* `$BASHKIT_IMAGE` -- Image to run: defaults to [bashup/bash-kit](https://github.com/bashup/bash-kit); if it is not changed from the default, the bash version can be [any official bash tag](https://hub.docker.com/_/bash?tab=tags), and the needed image will be pulled or built if necessary.
 * `$BASHKIT_DOCKER_OPTS` -- An array of additional options to run the container with; defaults to `-it` for an interactive run.  (`--rm`, `-e TERM`, volume mappings and the command line are automatically generated, so you do not need to include them here.)  If you need multiple options or values, set them as an array, e.g. `BASHKIT_DOCKER_OPTS=(--foo "bar baz")`, or `BASHKIT_DOCKER_OPTS=()` to remove the default options.
 
 Inside the docker container, a `run-bash VERSION command...`  command is run first, allowing you to do any docker-specific setup (e.g. installing additional dependencies) by either overriding the command or defining a `before` handler for the  `run-bash` event.

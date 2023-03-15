@@ -3,7 +3,7 @@ echo "Warning: bash32 module is deprecated; use bash-kit instead" >&2
 
 dk use: bash-kit
 
-export BASH32_IMAGE=bashitup/bash-3.2
+export BASH32_IMAGE=ghcr.io/bashup/bash-kit:3.2
 export BASH32_DOCKER_OPTS="-it"
 
 bash32.prepare-image() {
@@ -20,9 +20,9 @@ dk.bash32() {
     bash32.prepare-image
 
     # Figure out what image to use, falling back to BASHKIT_IMAGE
-    # if using the default bashitup/bash-3.2:latest image
-    REPLY=$BASH32_IMAGE; [[ $REPLY == *:* ]] || REPLY+=":latest"
-    [[ $REPLY != "bashitup/bash-3.2:latest" ]] || REPLY=$BASHKIT_IMAGE
+    # if using the default ghcr.io/bashup/bash-kit:3.2 image
+    REPLY=$BASH32_IMAGE; [[ $REPLY == *:* ]] || REPLY+=":3.2"
+    [[ $REPLY != "ghcr.io/bashup/bash-kit:3.2" ]] || REPLY=$BASHKIT_IMAGE
 
 	# shellcheck disable=SC2034
     local BASHKIT_IMAGE=$REPLY BASHKIT_DOCKER_OPTS=("$BASH32_DOCKER_OPTS")

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-export BASHKIT_IMAGE=bashitup/bash-kit
+export BASHKIT_IMAGE=ghcr.io/bashup/bash-kit
 export BASHKIT_DOCKER_OPTS=(-it)
 
 
@@ -9,8 +9,8 @@ bashkit-build() {
 	REPLY=$1; [[ $REPLY == *:* ]] || REPLY+=:$2
 
 	# Only build if standard image, non-standard tag, and doesn't exist locally
-	[[ $1 != bashitup/bash-kit ]] && return
-	[[ " 3.2 4.2 4.3 4.4 5.0 " == *" $2 "* ]] && return
+	[[ $1 != ghcr.io/bashup/bash-kit ]] && return
+	[[ " 3.2 4.2 4.3 4.4 5.0 5.1 " == *" $2 "* ]] && return
 	[[ "$(docker images -q "$1:$2")" ]] && return
 
 	# build from github
