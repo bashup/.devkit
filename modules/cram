@@ -38,7 +38,7 @@ install-cram() {
     github pjeby/cram indent-fix
     catbin cram <(
         echo '#!/usr/bin/env bash'
-        echo 'PYTHONPATH=$BASHER_PACKAGES_PATH/pjeby/cram python -m cram "$@"'
+        echo 'PYTHONPATH=$BASHER_PACKAGES_PATH/pjeby/cram python3 -m cram "$@"'
     )
 }
 
