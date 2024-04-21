@@ -8,7 +8,7 @@ If you're working on a project that:
   * **don't** want to have to setup all those dependencies to work on it, and
   * **don't** want to learn project-specific ways to run tests, etc.
 
-your choices are kind of limited.  You can use a Makefile, maybe, and what... git submodules?  Vendoring with git subtrees?  One of the many bash package managers that don't really get along with each other, and which your collaborators would have to install on their mahcines?  An entire Vagrant VM or collection of docker images?
+your choices are kind of limited.  You can use a Makefile, maybe, and what... git submodules?  Vendoring with git subtrees?  One of the many bash package managers that don't really get along with each other, and which your collaborators would have to install on their machines?  An entire Vagrant VM or collection of docker images?
 
 Sure, you can solve the standardization part of the problem with a [Scripts to Rule Them All](https://githubengineering.com/scripts-to-rule-them-all/)-style `script/` directory, but those are kind of a pain to make and not terribly reusable from one project to the next.
 
@@ -115,7 +115,7 @@ Currently, .devkit provides the following modules you can `dk use:` in your `.dk
 
 For any project:
 
-* `entr-watch` -- implement a `watch` command using [entr](http://entrproject.org/)
+* `entr-watch` -- implement a `watch` command using [entr](https://eradman.com/entrproject/)
 
 
 * `cram` -- implement a  `test` command using [cram](https://bitheap.org/cram/)
@@ -188,7 +188,7 @@ To activate this in your project, add a `dk use: shell-console` line to your `.d
 
 It's a common task to want to watch files and run commands when they change.  devkit currently supports three file watching tools:
 
-* [entr](http://entrproject.org/), via the [entr-watch](#entr-watch) module
+* [entr](https://eradman.com/entrproject/), via the [entr-watch](#entr-watch) module
 * [modd](https://github.com/cortesi/modd), via the [modd-watch](#modd-watch) module, and
 * [reflex](https://github.com/cespare/reflex), via the [reflex-watch](#reflex-watch) module
 
@@ -200,7 +200,7 @@ modd, on the other hand, *only* processes globs, but has brace expansion and rec
 
 #### entr-watch
 
-The [entr-watch](modules/entr-watch) module defines a default `dk.watch` command to provide a `script/watch` command that watches for file changes (using [entr](http://entrproject.org/)) and reruns a command (`dk test` by default).  To enable it, `dk use: entr-watch` in your `.dkrc`, and then optionally define a `watch.files` function to output which files to watch.  (By default, it outputs the current directory contents and any `test.files`.)
+The [entr-watch](modules/entr-watch) module defines a default `dk.watch` command to provide a `script/watch` command that watches for file changes (using [entr](https://eradman.com/entrproject/)) and reruns a command (`dk test` by default).  To enable it, `dk use: entr-watch` in your `.dkrc`, and then optionally define a `watch.files` function to output which files to watch.  (By default, it outputs the current directory contents and any `test.files`.)
 
 The watch command requires the `entr` and `tput` commands be installed.  The former is used to watch files for changes, and the latter to compute how many lines of watched command output can be displayed without scrolling.  (The watched command's output is cut off using `head`, and the screen is cleared whenever the watched command is re-run.)
 

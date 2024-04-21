@@ -3,7 +3,7 @@
 dk use: tty
 
 dk.watch() {
-    require-any entr abort "Please install entr (http://entrproject.org/) to watch files" 69
+    require-any entr abort "Please install entr (https://eradman.com/entrproject/) to watch files" 69
     require-any tput
     (($#)) || set -- dk files_changed # default to firing `files_changed` events
     if run watch_files | entr-watch "$@"; (($?==2)); then
