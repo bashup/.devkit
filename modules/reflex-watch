@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 dk.watch() {
 	require-any reflex dk use: golang
-	require-any reflex go get github.com/bashup/reflex  # Need reflex for this
+	require-any reflex go install github.com/bashup/reflex@bashup  # Need reflex for this
 	require-any tput  # for pager.watch
 
 	# Trap SIGUSR1 to restart the watch with new configuration

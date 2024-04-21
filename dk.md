@@ -177,7 +177,7 @@ github() {
 
 ### go
 
-Some utilities need to be built using `go get`, but go itself may not be present on the target system.  We provide a wrapper that requests its installation, for use in commands like `require tool go get github.com/something/tool`.
+Some utilities need to be built using `go install`, but go itself may not be present on the target system.  We provide a wrapper that requests its installation, for use in commands like `require tool go install github.com/something/tool`.
 
 ```shell
 go() { require-any go; unset -f go; command go "$@"; }

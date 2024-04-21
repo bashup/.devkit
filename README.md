@@ -206,7 +206,7 @@ The watch command requires the `entr` and `tput` commands be installed.  The for
 
 #### modd-watch
 
-The [modd-watch](modules/modd-watch) module lets you define "watch rules": file patterns to watch for, combined with commands to run those when files change.  Running `dk watch` (or `script/watch` if you create a link for it) will run [modd](https://github.com/cortesi/modd) to watch the files and run commands.  (If modd isn't installed, the `watch` command will try to install it to the project `.deps` directory using `go get`.)
+The [modd-watch](modules/modd-watch) module lets you define "watch rules": file patterns to watch for, combined with commands to run those when files change.  Running `dk watch` (or `script/watch` if you create a link for it) will run [modd](https://github.com/cortesi/modd) to watch the files and run commands.  (If modd isn't installed, the `watch` command will try to install it to the project `.deps` directory using `go install`.)
 
 The way you add rules is by calling the `watch` or `watch+` functions from your `.dkrc`.  Each of these functions accepts zero or more glob patterns (optionally negated with a leading `!`), followed by `--` and a command to run.  If no globs are specified, the command will run once, at the beginning of the watch.  (You can also add global exclusion globs with `unwatch`.)  Some examples:
 
@@ -242,7 +242,7 @@ Finally, note that if your `.dkrc` file is changed during a watch run, the `dk w
 
 #### reflex-watch
 
-The [reflex-watch](modules/reflex-watch) module is almost identical to modd-watch in function, but using [reflex](https://github.com/cespare/reflex) to watch files and run commands.  (If reflex isn't installed, the `watch` command will try to install it to the project `.deps` directory using `go get`.)
+The [reflex-watch](modules/reflex-watch) module is almost identical to modd-watch in function, but using [reflex](https://github.com/cespare/reflex) to watch files and run commands.  (If reflex isn't installed, the `watch` command will try to install it to the project `.deps` directory using `go install`.)
 
 The key differences are:
 
@@ -291,7 +291,7 @@ dk use: golang
 golang 1.11.x   # use latest-available golang 1.11
 ```
 
-And then use `go get` or other go commands as needed.  Binaries will be built in `.deps/bin`, and the default `GOROOT` is `.deps/go` (unless you override these settings in `.envrc`).
+And then use `go install` or other go commands as needed.  Binaries will be built in `.deps/bin`, and the default `GOROOT` is `.deps/go` (unless you override these settings in `.envrc`).
 
 The  `dk use: golang` command gives your `.dkrc` access to the following functions:
 
